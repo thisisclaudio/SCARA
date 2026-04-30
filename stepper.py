@@ -9,7 +9,7 @@ import time
 import math
 
 # ─── Controller verbinden ─────────────────────────────────────────────────────
-ctrl = StepperController(port="/dev/ttyUSB0", baudrate=115200)
+ctrl = StepperController(port="COM5", baudrate=115200)
 
 # ─── Motoren initialisieren ───────────────────────────────────────────────────
 # steps_per_rev = 200 Schritte * 16 Microstepping = 3200
