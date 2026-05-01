@@ -163,13 +163,20 @@ void processCommand(const String& jsonStr) {
 
   // ── home ─────────────────────────────────────────────────────────
   else if (strcmp(cmd, "home") == 0) {
-    int dir = doc["dir"] | -1;   // Standard: negative Richtung
+    int dir = doc["dir"] | -1;
+
+    float spd = doc["speed"] | HOMING_SPEED;
+    float acc = doc["accel"] | HOMING_ACCEL;
+
     mstate.homing    = true;
     mstate.homed     = false;
     mstate.homingDir = dir;
-    motor.setAcceleration(HOMING_ACCEL);
-    motor.setMaxSpeed(HOMING_SPEED);
-    motor.move(dir * 1000000L);  // grosse Strecke, wird beim Schalter gestoppt
+
+    motor.setAcceleration(acc);
+    motor.setMaxSpeed(spd);
+
+    motor.move(dir * 1000000L);
+
     sendOk(id, cmd, motor);
   }
 
