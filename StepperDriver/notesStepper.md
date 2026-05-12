@@ -24,3 +24,8 @@ Achse 2 Homing Parameer
 
 Achse 1 Homing Parameter
 "speed":12000,"accel":60000
+
+
+
+
+Achse 2: 59000 Steps abe
