@@ -8,7 +8,7 @@ from STservo_sdk import *                  # Uses STServo SDK library
 
 load_dotenv()
 
-com_port_motor = os.getenv("COM_PORT_MOTOR")
+com_port_motor = "COM10"
 portHandler = PortHandler(com_port_motor)
 packetHandler = sts(portHandler)
 
@@ -21,6 +21,7 @@ else:
 
 
 # Set port baudrate
+#Baudrate: 1Mbps
 if portHandler.setBaudRate(1000000):
     print("Succeeded to change the baudrate")
 else:

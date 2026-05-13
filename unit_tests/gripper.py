@@ -15,7 +15,7 @@ def grip(portHandler, closed):
     else:
         gripper_soll = 0
 
-    sts_comm_result, sts_error = packetHandlerSC.WritePos(3, gripper_soll, 0, 1000) 
+    sts_comm_result, sts_error = packetHandlerSC.WritePos(5, gripper_soll, 0, 1000) 
     if sts_comm_result != COMM_SUCCESS:
         print("%s" % packetHandlerSC.getTxRxResult(sts_comm_result))
     elif sts_error != 0:

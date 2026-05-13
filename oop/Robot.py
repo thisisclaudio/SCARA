@@ -28,32 +28,38 @@ class Robot:
             print("Failed to change the baudrate")
             quit()
 
-        offset_servo1 = os.getenv("OFFSET_SERVO_1")
-        self.motor_1 = Motor(1, int(offset_servo1) if offset_servo1 else 0, self.packet_handler)
-        offset_servo2 = os.getenv("OFFSET_SERVO_2")
-        self.motor_2 = Motor(2, int(offset_servo2) if offset_servo2 else 0, self.packet_handler)
+        offset_servo3 = os.getenv("OFFSET_SERVO_3")
+        self.motor_3 = Motor(1, int(offset_servo3) if offset_servo3 else 0, self.packet_handler)
+        offset_servo4 = os.getenv("OFFSET_SERVO_4")
+        self.motor_4 = Motor(4, int(offset_servo4) if offset_servo4 else 0, self.packet_handler)
+        offset_servo5 = os.getenv("OFFSET_SERVO_5")
+        self.motor_5 = Motor(5, int(offset_servo5) if offset_servo5 else 0, self.packet_handler)
 
         self.path = []
 
     def shutdown(self):
-        self.motor_1.shutdown()
-        self.motor_2.shutdown()
+        self.motor_3.shutdown()
+        self.motor_4.shutdown()
+        self.motor_5.shutdown()
         self.port_handler.closePort()
         print("Robot shutdown")
   
     def get_motor_positions(self, raw=False):
         if raw:
-            pos1 = self.motor_1.get_position_raw()
-            pos2 = self.motor_2.get_position_raw()
+            pos1 = self.motor_3.get_position_raw()
+            pos2 = self.motor_4.get_position_raw()
+            pos3 = self.motor_5.get_position_raw()
         else:
-            pos1 = self.motor_1.get_position()
-            pos2 = self.motor_2.get_position()
-        return pos1, pos2
+            pos1 = self.motor_3.get_position()
+            pos2 = self.motor_4.get_position()
+            pos3 = self.motor_5.get_position()
+        return pos1, pos2, pos3
 
     def print_motor_positions(self, raw=False):
-        pos1, pos2 = self.get_motor_positions(raw)
-        print(f"\rMotor_1: {pos1:<6} | Motor_2: {pos2:<6}", end="", flush=True)
+        pos1, pos2, pos3 = self.get_motor_positions(raw)
+        print(f"\rMotor_3: {pos1:<6} | Motor_4: {pos2:<6} | Motor_5: {pos3:<6}", end="", flush=True)
 
+    """
     def get_tcp_position(self):
         theta1, theta2 = self.get_motor_positions()
         T54 = np.array([
@@ -198,14 +204,17 @@ class Robot:
                 self.path.pop(0)
             else:
                 self.set_tcp_position(target_position)
-
+    """
     def change_motor_mode(self, mode):
         self.motor_1.change_mode(mode)
         self.motor_2.change_mode(mode)
+        self.motor_3.change_mode(mode)
 
+    """
     def joystick_control(self, joystick_x, joystick_y):
         self.motor_1.set_speed(joystick_y * 10)
         self.motor_2.set_speed(joystick_x * 10)
+
 
     def move_jacobian(self, joystick_x, joystick_y):
         theta1, theta2 = self.get_motor_positions()
@@ -221,3 +230,4 @@ class Robot:
         d_theta = J_inv @ np.array([joystick_x, joystick_y])
         self.motor_1.set_speed(-d_theta[0] * 4096 / 2 / np.pi)
         self.motor_2.set_speed(-d_theta[1] * 4096 / 2 / np.pi)
+    """

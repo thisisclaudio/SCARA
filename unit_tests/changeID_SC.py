@@ -32,7 +32,7 @@ else:
 
 load_dotenv()
 
-com_port_motor = os.getenv("COM_PORT_MOTOR")
+com_port_motor = "COM10"
 portHandler = PortHandler(com_port_motor)
 packetHandler = sts(portHandler)
 
