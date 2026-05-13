@@ -4,9 +4,6 @@ import time
 import serial
 
 
-
-
-
 class StepperController:
 
 

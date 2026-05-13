@@ -7,7 +7,7 @@ import sys
 import time
 sys.path.insert(0, "..")   # adjust if needed
 
-from Stepper import StepperController
+from stepper import StepperController
 
 
 stepper = StepperController(offset1=0, offset2=0, com_port="COM7")
