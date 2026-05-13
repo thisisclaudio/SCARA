@@ -1,4 +1,5 @@
 from Motor import Motor
+from Stepper import Stepper
 import sys
 import os
 import numpy as np
@@ -12,7 +13,8 @@ class Robot:
     def __init__(self):
         load_dotenv()
         self.port_handler = PortHandler(os.getenv("COM_PORT_MOTOR"))
-        self.packet_handler = sts(self.port_handler)
+        self.packet_handler3 = sts(self.port_handler)
+        self.packet_handler45 = scscl(self.port_handler)
         
         # open port
         if self.port_handler.openPort():
@@ -29,11 +31,17 @@ class Robot:
             quit()
 
         offset_servo3 = os.getenv("OFFSET_SERVO_3")
-        self.motor_3 = Motor(1, int(offset_servo3) if offset_servo3 else 0, self.packet_handler)
+        stepper_COM_port = os.getenv("COM_PORT_STEPPER")
+        offset_stepper_1 = os.getenv("OFFSET_STEPPER_1")
+        
+        self.stepper_1 = Stepper(1, int(offset_stepper_1) if offset_stepper_1 else 0, stepper_COM_port)
+        offset_stepper_2 = os.getenv("OFFSET_STEPPER_2")
+        self.stepper_2 = Stepper(2, int(offset_stepper_2) if offset_stepper_2 else 0, stepper_COM_port)
+        self.motor_3 = Motor(1, int(offset_servo3) if offset_servo3 else 0, self.packet_handler3)
         offset_servo4 = os.getenv("OFFSET_SERVO_4")
-        self.motor_4 = Motor(4, int(offset_servo4) if offset_servo4 else 0, self.packet_handler)
+        self.motor_4 = Motor(4, int(offset_servo4) if offset_servo4 else 0, self.packet_handler45)
         offset_servo5 = os.getenv("OFFSET_SERVO_5")
-        self.motor_5 = Motor(5, int(offset_servo5) if offset_servo5 else 0, self.packet_handler)
+        self.motor_5 = Motor(5, int(offset_servo5) if offset_servo5 else 0, self.packet_handler45)
 
         self.path = []
 

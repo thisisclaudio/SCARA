@@ -1,73 +1,152 @@
-"""
-example_usage.py
-~~~~~~~~~~~~~~~~
-Zeigt wie StepperMotor analog zur Waveshare Motor-Klasse verwendet wird.
-"""
-
-from StepperDriver.StepperMotor import StepperController, StepperMotor
+import threading
+import json
 import time
-import math
+import serial
 
-# ─── Controller verbinden ─────────────────────────────────────────────────────
-ctrl = StepperController(port="COM5", baudrate=115200)
 
-# ─── Motoren initialisieren ───────────────────────────────────────────────────
-# steps_per_rev = 200 Schritte * 16 Microstepping = 3200
-motor1 = StepperMotor(id=1, steps_per_rev=3200, controller=ctrl,
-                      default_speed=12000, default_accel=6000)
-motor2 = StepperMotor(id=2, steps_per_rev=3200, controller=ctrl,
-                      default_speed=12000, default_accel=6000)
 
-print(motor1)
-print(motor2)
 
-# ─── Homing ──────────────────────────────────────────────────────────────────
-print("\n--- Homing ---")
-motor1.home(direction=-1, blocking=True, timeout=30.0)
-motor2.home(direction=-1, blocking=True, timeout=30.0)
 
-# ─── Position lesen ───────────────────────────────────────────────────────────
-print(f"\nMotor 1 Position: {motor1.get_position():.4f} rad")
-print(f"Motor 2 Position: {motor2.get_position():.4f} rad")
-print(f"Motor 1 Status:   {motor1.get_status()}")
+class StepperController:
 
-# ─── Positionsmodus ───────────────────────────────────────────────────────────
-print("\n--- Positionsmodus ---")
-motor1.set_position(math.pi / 2)          # 90°
-motor2.set_position(math.pi)              # 180°
 
-motor1.wait_until_done(timeout=10.0)
-motor2.wait_until_done(timeout=10.0)
+    def __init__(self, offset1, offset2, com_port):
+        self.offset1 = offset1
+        self.offset2 = offset2
+        self.com_port = com_port
+        self.serial = SerialManager()
+        self.serial.open_serial(com_port)
+    
+    def shutdown(self):
+        self.serial.close_serial()
+        print("StepperController shutdown")
 
-print(f"Motor 1: {math.degrees(motor1.get_position()):.1f}°")
-print(f"Motor 2: {math.degrees(motor2.get_position()):.1f}°")
+    def get_position_raw(self, motor_id):
+        self.serial.send({"id": motor_id, "cmd": "get_pos"})
+        #come back to this 
+        print("Waiting for position response...")
+        response = self.serial.get_latest_data()
+        while response is None:
+            time.sleep(0.01)
+            response = self.serial.get_latest_data()
+        return response["pos"] if "pos" in response else "blöd"
 
-# Mit expliziter Geschwindigkeit
-motor1.set_position(0.0, speed=5000)
-motor1.wait_until_done()
+    def home(self, motor_id, speed=400):
+        self.serial.send({"id": motor_id, "cmd": "home", "speed": speed})
+        status = self.serial.get_latest_data()
+        while status is None:
+            time.sleep(0.01)
+            status = self.serial.get_latest_data()
+        if status.get("homed"):
+            return status
+        status = self.serial.get_latest_data()
+        while status is None:
+            time.sleep(0.01)
+            status = self.serial.get_latest_data()
+        return status
 
-# ─── Relativbewegung ──────────────────────────────────────────────────────────
-print("\n--- Relativbewegung ---")
-motor1.move_relative(math.pi / 4)         # +45°
-motor1.wait_until_done()
-print(f"Motor 1 nach +45°: {math.degrees(motor1.get_position()):.1f}°")
+    
 
-# ─── Velocity-Modus ──────────────────────────────────────────────────────────
-print("\n--- Velocity-Modus ---")
-motor1.change_mode("velocity", speed=3000)
-time.sleep(2.0)
-motor1.set_speed(-3000)                   # Richtung umkehren
-time.sleep(2.0)
-motor1.stop()
-motor1.change_mode("position")            # Zurück in Positionsmodus
 
-# ─── Rohe Steps verwenden (analog set_position_raw / WritePosEx) ─────────────
-print("\n--- Raw Steps ---")
-motor1.set_position_raw(1600)             # Halbe Umdrehung in Steps
-motor1.wait_until_done()
-print(f"Raw pos: {motor1.get_position_raw()} steps")
 
-# ─── Shutdown ─────────────────────────────────────────────────────────────────
-motor1.shutdown()
-motor2.shutdown()
-ctrl.close()
+    def get_position(self, motor_id):
+        position_raw = self.get_position_raw(motor_id)
+        if motor_id == 1:
+            return (position_raw - self.offset1) * 2 * 3.141592653589793 / 3200
+        elif motor_id == 2:
+            return (self.offset2 - position_raw) / 3200 * 8 # 8mm pro Umdrehung 
+        return
+    
+    def get_speed(self, motor_id):
+        return "get_speed not implemented yet"
+        self.serial.send({"id": motor_id, "cmd": "get_speed"})
+        speed = self.serial.get_latest_data()
+        while speed is None:
+            time.sleep(0.01)
+            speed = self.serial.get_latest_data()
+        return speed
+    
+    def set_position_raw(self, motor_id, position, speed=1000):
+        self.serial.send({"id": motor_id, "cmd": "move_to", "pos": position, "speed": speed})
+        status = self.serial.get_latest_data()
+        while status is None:
+            time.sleep(0.01)
+            status = self.serial.get_latest_data()
+        return status
+
+    def set_position(self, motor_id, position, speed=200):
+        if motor_id == 1:
+            position_raw = int(position * 3200 / (2 * 3.141592653589793) + self.offset1)
+        elif motor_id == 2:
+            position_raw = int(self.offset2 - position * 3200 / 8)
+        status = self.set_position_raw(motor_id, position_raw, speed)
+        return status
+
+    def set_speed(self, speed, motor_id):
+        self.serial.send({"id": motor_id, "cmd": "set_speed", "speed": speed})
+        status = self.serial.get_latest_data()
+        while status is None:
+            time.sleep(0.01)
+            status = self.serial.get_latest_data()
+        return status
+
+
+class SerialManager:
+    def __init__(self):
+        self.serial = None
+        self.com_port = None
+        self.serial_running = False
+        self.latest_data = None
+        self.lock = threading.Lock()
+
+    def open_serial(self, com_port):
+        if self.serial is None:
+            try:
+                self.serial = serial.Serial(com_port, 115200, timeout=1)
+                #print(f"Serial port {com_port} opened successfully.")
+                self.serial_running = True
+                self.thread = threading.Thread(target=self._read_loop, daemon=True)
+                self.thread.start()
+            except serial.SerialException as e:
+                print(f"Error opening serial port {com_port}: {e}")
+                self.serial = None
+        else:
+            print("Serial port is already open.")
+
+    def close_serial(self):
+        if self.serial is not None:
+            self.serial.close()
+            #print("Serial port closed.")
+            self.serial = None
+            self.serial_running = False
+        else:
+            print("Serial port is not open.") 
+
+    def send(self, data):
+        if self.serial is not None and self.serial_running:
+            payload = json.dumps(data) + "\n"
+            with self.lock:
+                self.serial.write(payload.encode())
+        else:
+            print("Serial port is not open or not running.")  
+
+    def _read_loop(self):
+        while self.serial_running:
+            try:
+                if self.serial is not None and self.serial.is_open and self.serial.in_waiting > 0:
+                    line = self.serial.readline().decode(errors="ignore").strip()
+
+                    if line:
+                        try:
+                            
+                            self.latest_data = json.loads(line)
+                        except json.JSONDecodeError:
+                            pass
+            except serial.SerialException as e:
+                print(f"Serial error: {e}")
+                self.serial_running = False            
+                    
+    def get_latest_data(self):
+        latest = self.latest_data
+        self.latest_data = None
+        return latest         

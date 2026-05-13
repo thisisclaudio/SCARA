@@ -10,7 +10,7 @@ class Motor:
         self.packet_handler.set_max_angle(self.id, 0)
         self.packet_handler.set_min_angle(self.id, 0)
         self.packet_handler.set_multiturn(self.id)
-        
+  
 
     def shutdown(self):
         self.packet_handler.change_hold(self.id, 0)
