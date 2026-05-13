@@ -1,0 +1,33 @@
+program:
+  - type: wait
+    delay: 500
+
+  - type: moveJ
+    pos: [100, 100, 50, 0]
+    speed: 500
+
+  - type: wait
+    delay: 1000
+
+  - type: moveL
+    pos: [150, 150, 50, 45]
+    speed: 800
+
+  - type: wait
+    delay: 500
+
+  - type: gripperSetPos
+    pos: 100
+
+  - type: wait
+    delay: 1000
+
+  - type: moveL
+    pos: [100, 100, 30, 90]
+    speed: 600
+
+  - type: gripperSetPos
+    pos: 0
+
+  - type: wait
+    delay: 300
