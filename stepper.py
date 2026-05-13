@@ -54,7 +54,8 @@ class StepperController:
         if motor_id == 1:
             return (position_raw - self.offset1) * 2 * 3.141592653589793 / 3200
         elif motor_id == 2:
-            return (self.offset2 - position_raw) / 3200 * 8 # 8mm pro Umdrehung 
+            return (self.offset2 - position_raw) / 3200 * 8 
+            # 8mm pro Umdrehung 
         return
     
     def get_speed(self, motor_id):
