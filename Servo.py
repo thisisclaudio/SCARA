@@ -2,10 +2,9 @@
 from STservo_sdk import * 
 
 class Servo_Motor:
-    def __init__(self, id, offset, port, model, port_handler=None):
+    def __init__(self, id, offset, model, port_handler=None):
         self.id = id
         self.offset = offset
-        self.port = port
         self.model = model
         self.mode = "position"
         self.port_handler = port_handler
@@ -40,42 +39,49 @@ class Servo_Motor:
             position, _, _, _ = self.packet_handler.ReadPosSpeed(self.id)
             return position + self.offset ## evtl anpassen siehe 0 pos #- 1024 +
     
+
     def get_position(self):
         position_raw = self.get_position_raw()
-        if self.model == "st3215":
-            return -position_raw * 2 * 3.141592653589793 / 4096
+        if self.model == "sc09":
+            return position_raw * 0.29296875 * 3.141592653589793 / 180 # 0.29296875° pro Schritt & grad -> rad
         else:
-            return position_raw * 0.29296875 * 3.141592653589793 / 180
+            return -position_raw * 2 * 3.141592653589793 / 4096 #TODO
+
 
     def get_speed(self):
         _, speed, _, _ = self.packet_handler.ReadPosSpeed(self.id)
         return speed
     
+
     def set_position(self, position, speed=1000):
-        if self.model == "st3215":
-            position_raw = int(-position * 4096 / (2 * 3.141592653589793))
+        if self.model == "sc09":
+            position_raw = int(position * 1024 / (2 * 3.141592653589793) + 1024)
         else:
-            position_raw = int(position * 1024 / (2 * 3.141592653589793) + 1024 - self.offset)
+            position_raw = int(-position * 4096 / (2 * 3.141592653589793))
 
         self.set_position_raw(position_raw, speed)
         return
 
     def set_position_raw(self, position, speed=1000):
-        if self.model == "st3215":
-            position = -position
-            if position < 0:
-                position = -32768 - position
-        else:
+        if self.model == "sc09":
             if position < 0:
                 #position = -1024 - position
                 print("ahahahhahahahaha nico seit chunt nie so wiit siiiike✊")
+        else: #st3215
+            #debug 
+            print(f"Pos before thing: {position}")
+            position = -position
+            if position < 0:
+                
+                position = -32768 - position #TODO so richtig???
         setPosMot = position - self.offset
         #debug message
         print(f"Setting servo {self.id} to raw position {position} set position motor {setPosMot} with speed {speed}")
         self.packet_handler.WritePosEx(self.id, setPosMot, int(speed), 0)
 
+
     def change_mode(self, mode):
-        if self.id == 4 or self.id == 5:
+        if self.model == "sc09":
             print("Warning: Servo 4 and 5 only support position mode. Ignoring mode change.")
             return
 
@@ -87,6 +93,7 @@ class Servo_Motor:
             raise ValueError("Invalid mode. Use 'position' or 'velocity'.")
         self.mode = mode
         return
+
 
     def set_speed(self, speed):
         if self.mode != "velocity":

@@ -20,11 +20,13 @@ COM_PORT_SERVO = os.getenv("COM_PORT_SERVO")
 print(f"Using COM port for servo: {COM_PORT_SERVO}")
 
 port_handler = PortHandler(COM_PORT_SERVO)
-servo3 = Servo_Motor(id=1, offset=OFFSET_SERVO3, port=COM_PORT_SERVO, model="st3215", port_handler=port_handler)
-servo4 = Servo_Motor(id=4, offset=OFFSET_SERVO4, port=COM_PORT_SERVO, model="sc09", port_handler=port_handler)
-servo5 = Servo_Motor(id=5, offset=OFFSET_SERVO5, port=COM_PORT_SERVO, model="sc09", port_handler=port_handler)
+servo3 = Servo_Motor(id=1, offset=OFFSET_SERVO3, model="st3215", port_handler=port_handler)
+servo4 = Servo_Motor(id=4, offset=OFFSET_SERVO4, model="sc09", port_handler=port_handler)
+servo5 = Servo_Motor(id=5, offset=OFFSET_SERVO5, model="sc09", port_handler=port_handler)
+pos3 = servo3.get_position_raw()  # initialize position
+print(f"Initial Servo 3 position: {pos3:.2f}")
 
-servo3.set_position_raw(10)
+servo3.set_position_raw(0)
 
 while True:
     pos3 = servo3.get_position_raw()

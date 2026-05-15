@@ -5,8 +5,6 @@ import serial
 
 
 class StepperController:
-
-
     def __init__(self, offset1, offset2, com_port):
         self.offset1 = offset1
         self.offset2 = offset2
@@ -14,9 +12,11 @@ class StepperController:
         self.serial = SerialManager()
         self.serial.open_serial(com_port)
     
+
     def shutdown(self):
         self.serial.close_serial()
         print("StepperController shutdown")
+
 
     def get_position_raw(self, motor_id):
         self.serial.send({"id": motor_id, "cmd": "get_pos"})
@@ -27,6 +27,7 @@ class StepperController:
             time.sleep(0.01)
             response = self.serial.get_latest_data()
         return response["pos"] if "pos" in response else "blöd"
+
 
     def home(self, motor_id, speed=400):
         self.serial.send({"id": motor_id, "cmd": "home", "speed": speed})
@@ -42,9 +43,6 @@ class StepperController:
             status = self.serial.get_latest_data()
         return status
 
-    
-
-
 
     def get_position(self, motor_id):
         position_raw = self.get_position_raw(motor_id)
@@ -55,6 +53,7 @@ class StepperController:
             # 8mm pro Umdrehung 
         return
     
+
     def get_speed(self, motor_id):
         return "get_speed not implemented yet"
         self.serial.send({"id": motor_id, "cmd": "get_speed"})
@@ -64,6 +63,7 @@ class StepperController:
             speed = self.serial.get_latest_data()
         return speed
     
+
     def set_position_raw(self, motor_id, position, speed=1000):
         self.serial.send({"id": motor_id, "cmd": "move_to", "pos": position, "speed": speed})
         status = self.serial.get_latest_data()
@@ -72,6 +72,7 @@ class StepperController:
             status = self.serial.get_latest_data()
         return status
 
+
     def set_position(self, motor_id, position, speed=200):
         if motor_id == 1:
             position_raw = int(position * 3200 / (2 * 3.141592653589793) + self.offset1)
@@ -79,6 +80,7 @@ class StepperController:
             position_raw = int(self.offset2 - position * 3200 / 8)
         status = self.set_position_raw(motor_id, position_raw, speed)
         return status
+
 
     def set_speed(self, speed, motor_id):
         self.serial.send({"id": motor_id, "cmd": "set_speed", "speed": speed})
@@ -97,6 +99,7 @@ class SerialManager:
         self.latest_data = None
         self.lock = threading.Lock()
 
+
     def open_serial(self, com_port):
         if self.serial is None:
             try:
@@ -111,6 +114,7 @@ class SerialManager:
         else:
             print("Serial port is already open.")
 
+
     def close_serial(self):
         if self.serial is not None:
             self.serial.close()
@@ -120,6 +124,7 @@ class SerialManager:
         else:
             print("Serial port is not open.") 
 
+
     def send(self, data):
         if self.serial is not None and self.serial_running:
             payload = json.dumps(data) + "\n"
@@ -127,6 +132,7 @@ class SerialManager:
                 self.serial.write(payload.encode())
         else:
             print("Serial port is not open or not running.")  
+
 
     def _read_loop(self):
         while self.serial_running:
@@ -143,6 +149,7 @@ class SerialManager:
             except serial.SerialException as e:
                 print(f"Serial error: {e}")
                 self.serial_running = False            
+   
                     
     def get_latest_data(self):
         latest = self.latest_data
