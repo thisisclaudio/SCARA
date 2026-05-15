@@ -1,5 +1,7 @@
+from re import match
+
 from Motor import Motor
-from Stepper import Stepper
+from Stepper import StepperController
 import sys
 import os
 import numpy as np
@@ -9,12 +11,34 @@ parent_dir = os.path.abspath(os.path.join(current_dir, ".."))
 sys.path.append(parent_dir)
 from STservo_sdk import *    
 
+    
 class Robot:
+    # Constants for kinematics
+    OFFSET_STEPPER_1 = 0
+    OFFSET_STEPPER_2 = 0
+    OFFSET_SERVO3 = 0
+    OFFSET_SERVO4 = 0
+    OFFSET_SERVO5 = 0
+    
+    OFFSET_AXIS_01 = 141
+    LENGTH_AXIS_23 = 125
+    LENGTH_AXIS_34 = 125
+    OFFSET_AXIS_34 = -30
+    OFFSET_GRIPPER = -125
+        
+    MIN_AXIS_1 = 0
+    MAX_AXIS_1 = 290
+    MIN_AXIS_2 = -np.pi/2
+    MAX_AXIS_2 = np.pi/2
+    MIN_AXIS_3 = -np.pi/2
+    MAX_AXIS_3 = np.pi/2
+    MIN_AXIS_4 = -np.pi/2
+    MAX_AXIS_4 = np.pi/2
+
+
     def __init__(self):
         load_dotenv()
         self.port_handler = PortHandler(os.getenv("COM_PORT_MOTOR"))
-        self.packet_handler3 = sts(self.port_handler)
-        self.packet_handler45 = scscl(self.port_handler)
         
         # open port
         if self.port_handler.openPort():
@@ -29,151 +53,155 @@ class Robot:
         else:
             print("Failed to change the baudrate")
             quit()
-
-        offset_servo3 = os.getenv("OFFSET_SERVO_3")
-        stepper_COM_port = os.getenv("COM_PORT_STEPPER")
-        offset_stepper_1 = os.getenv("OFFSET_STEPPER_1")
         
-        self.stepper_1 = Stepper(1, int(offset_stepper_1) if offset_stepper_1 else 0, stepper_COM_port)
-        offset_stepper_2 = os.getenv("OFFSET_STEPPER_2")
-        self.stepper_2 = Stepper(2, int(offset_stepper_2) if offset_stepper_2 else 0, stepper_COM_port)
-        self.motor_3 = Motor(1, int(offset_servo3) if offset_servo3 else 0, self.packet_handler3)
-        offset_servo4 = os.getenv("OFFSET_SERVO_4")
-        self.motor_4 = Motor(4, int(offset_servo4) if offset_servo4 else 0, self.packet_handler45)
-        offset_servo5 = os.getenv("OFFSET_SERVO_5")
-        self.motor_5 = Motor(5, int(offset_servo5) if offset_servo5 else 0, self.packet_handler45)
+        stepper_COM_port = os.getenv("COM_PORT_STEPPER")
+        
+        self.stepper_controller = StepperController(self.OFFSET_STEPPER_1, self.OFFSET_STEPPER_2, stepper_COM_port)
+        self.motor_3 = Motor(3, self.OFFSET_SERVO3, "st3215", self.port_handler)
+        self.motor_4 = Motor(4, self.OFFSET_SERVO4, "sc09", self.port_handler)
+        self.motor_5 = Motor(5, self.OFFSET_SERVO5, "sc09", self.port_handler)
 
         self.path = []
 
+
     def shutdown(self):
+        self.stepper_controller.shutdown()
         self.motor_3.shutdown()
         self.motor_4.shutdown()
         self.motor_5.shutdown()
         self.port_handler.closePort()
         print("Robot shutdown")
   
+  
     def get_motor_positions(self, raw=False):
         if raw:
-            pos1 = self.motor_3.get_position_raw()
-            pos2 = self.motor_4.get_position_raw()
-            pos3 = self.motor_5.get_position_raw()
+            pos1 = self.stepper_controller.get_position_raw(1)
+            pos2 = self.stepper_controller.get_position_raw(2)
+            pos3 = self.motor_3.get_position_raw()
+            pos4 = self.motor_4.get_position_raw()
         else:
-            pos1 = self.motor_3.get_position()
-            pos2 = self.motor_4.get_position()
-            pos3 = self.motor_5.get_position()
-        return pos1, pos2, pos3
+            pos1 = self.stepper_controller.get_position(1)
+            pos2 = self.stepper_controller.get_position(2)
+            pos3 = self.motor_3.get_position()
+            pos4 = self.motor_4.get_position()
+        return pos1, pos2, pos3, pos4
+
 
     def print_motor_positions(self, raw=False):
-        pos1, pos2, pos3 = self.get_motor_positions(raw)
-        print(f"\rMotor_3: {pos1:<6} | Motor_4: {pos2:<6} | Motor_5: {pos3:<6}", end="", flush=True)
+        pos1, pos2, pos3, pos4 = self.get_motor_positions(raw)
+        print(f"\rMotor_1: {pos1:<6} | Motor_2: {pos2:<6} | Motor_3: {pos3:<6} | Motor_4: {pos4:<6}", end="", flush=True)
 
-    """
+
     def get_tcp_position(self):
-        theta1, theta2 = self.get_motor_positions()
+        l1, theta1, theta2, theta3 = self.get_motor_positions()
+        
         T54 = np.array([
-            [1, 0, 0, 75],
+            [1, 0, 0, 0],
             [0, 1, 0, 0],
-            [0, 0, 1, 0],
+            [0, 0, 1, self.OFFSET_GRIPPER],
             [0, 0, 0, 1]
-        ])
+        ])    
         T43 = np.array([
-            [np.cos(theta2), -np.sin(theta2), 0, 0],
+            [np.cos(theta2), -np.sin(theta2), 0, self.LENGTH_AXIS_34],
             [np.sin(theta2),  np.cos(theta2), 0, 0],
-            [0, 0, 1, 0],
+            [0, 0, 1, self.OFFSET_AXIS_34],
             [0, 0, 0, 1]
         ])
         T32 = np.array([
-            [1, 0, 0, -75],
-            [0, 1, 0, 0],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]
-        ])
-        T21 = np.array([
-            [np.cos(theta1), -np.sin(theta1), 0, 0],
+            [np.cos(theta1), -np.sin(theta1), 0, self.LENGTH_AXIS_23],
             [np.sin(theta1),  np.cos(theta1), 0, 0],
             [0, 0, 1, 0],
             [0, 0, 0, 1]
         ])
-        T10 = np.array([
+        T21 = np.array([
             [1, 0, 0, 0],
-            [0, 1, 0, 66],
-            [0, 0, 1, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, l1],
             [0, 0, 0, 1]
         ])
-        p = np.array([0, 0, 0, 1])
-        p = T10 @ T21 @ T32 @ T43 @ T54 @ p
-
-        return p
+        T10 = np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, self.OFFSET_AXIS_01],
+            [0, 0, 0, 1]
+        ])
+        
+        pos = np.array([0, 0, 0, 1])
+        pos = T10 @ T21 @ T32 @ T43 @ T54 @ pos
+        pos.append(theta3)
+        
+        # Format: [x, y, z, theta]
+        return pos
+    
     
     def set_tcp_position(self, tcp_position):
-        # solution for startexercise, not for general case
-        # theta2 = np.arctan(tcp_position[1] / tcp_position[0])
-        # self.motor_2.set_position(theta2)   
-        # return True    
+        x, y, z, theta = tcp_position
 
-        if not self.check_workspace(tcp_position, elbow_left=True):
-            return False
-
-        x = tcp_position[0]
-        y = tcp_position[1]
-
-        y = y - 66 # differenz zum joystick
-
-        theta2 = np.arccos((75**2 + 75**2 - (x**2 + y**2)) / (2*75*75))
+        z = z - self.OFFSET_AXIS_01 - self.OFFSET_AXIS_34 - self.OFFSET_GRIPPER
+        theta3 = theta
+        theta2 = np.arccos((self.LENGTH_AXIS_23**2 + self.LENGTH_AXIS_34**2 - (x**2 + y**2)) / (2*self.LENGTH_AXIS_23*self.LENGTH_AXIS_34))
         theta1 = -np.pi/2 + np.arctan2(y,x) - theta2/2
 
-        self.move_sync(theta1, theta2)
+        soll_pos = [z, theta1, theta2, theta3]
+        
+        for index, pos in enumerate(soll_pos):
+            if not self.check_workspace(index, pos, elbow_left=True):
+                return False
+        
+        self.move_sync(soll_pos)
         return True
     
-    def move_sync(self, theta1_soll, theta2_soll, speed=1000):
-        theta1_ist = self.motor_1.get_position()
-        theta2_ist = self.motor_2.get_position()
+    
+    def check_workspace(self, index, pos, elbow_right=True):
+        match index:
+            case 0:
+                if pos < self.MIN_AXIS_1 or pos > self.MAX_AXIS_1:
+                    return False
+                return True
+            case 1:
+                if pos < self.MIN_AXIS_2 or pos > self.MAX_AXIS_2:            
+                    return False
+                return True
+            case 2:
+                if pos < self.MIN_AXIS_3 or pos > self.MAX_AXIS_3:
+                    return False
+                return True
+            case 3:
+                if pos < self.MIN_AXIS_4 or pos > self.MAX_AXIS_4:
+                    return False
+                return True
+    
+    
+    def move_sync(self, soll_pos, speed=400):
+        z_ist, theta1_ist, theta2_ist, theta3_ist = self.get_motor_positions()
+        z_soll, theta1_soll, theta2_soll, theta3_soll = soll_pos
 
+        z_diff = abs(z_soll - z_ist)
         theta1_diff = abs(theta1_soll - theta1_ist)
         theta2_diff = abs(theta2_soll - theta2_ist)
-
-        if theta1_diff > theta2_diff:
-            speed1 = speed
-            speed2 = speed * theta2_diff / theta1_diff
-        else:
-            speed2 = speed
-            speed1 = speed * theta1_diff / theta2_diff
-
-        self.motor_1.set_position(theta1_soll, speed1)
-        self.motor_2.set_position(theta2_soll, speed2)
-
-    def check_workspace(self, tcp_position, elbow_left=True):
-        x, y = tcp_position[0], tcp_position[1]
-        y = y - 66 # differenz zum joystick
-        r = 75
-        if elbow_left:
-            if (x + r) ** 2 + y ** 2 < r ** 2:
-                return False
-            if (x - r) ** 2 + y ** 2 <= r ** 2:
-                return True
-            if y < 0:
-                return False
-            if x ** 2 + y ** 2 <= (2 * r) ** 2:
-                return True
-            return False
-        else:
-            if (x + r) ** 2 + y ** 2 <= r ** 2:
-                return True
-            if (x - r) ** 2 + y ** 2 < r ** 2:
-                return False
-            if y < 0:
-                return False
-            if x ** 2 + y ** 2 <= (2 * r) ** 2:
-                return True
-            return False
+        theta3_diff = abs(theta3_soll - theta3_ist)
     
+        max_diff = max(z_diff, theta1_diff, theta2_diff, theta3_diff)
+        
+        speed_z = speed * z_diff / max_diff
+        speed_theta1 = speed * theta1_diff / max_diff
+        speed_theta2 = speed * theta2_diff / max_diff
+        speed_theta3 = speed * theta3_diff / max_diff
+
+        self.stepper_controller.set_position(1, z_soll, speed_z)
+        self.stepper_controller.set_position(2, theta1_soll, speed_theta1)
+        self.motor_3.set_position(theta2_soll, speed_theta2)
+        self.motor_4.set_position(theta3_soll, speed_theta3)
+
+
     def print_tcp_position(self):
         p = self.get_tcp_position()
-        x, y = p[0], p[1]
-        print(f"\rTCP position: x={x:<6} | y={y:<6}", end="", flush=True)
+        x, y, z, theta = p
+        print(f"\rTCP position: x={x:<6} | y={y:<6} | z={z:<6} | theta={theta:<6}", end="", flush=True)
 
+    
     def move_l(self, target_position, start_position=None, step_size=10):
-        if not self.check_workspace(target_position, elbow_left=True):
+        if not self.check_workspace(target_position, elbow_right=True):
             return False
         
         if not start_position:
@@ -192,17 +220,19 @@ class Robot:
             for i in range(1, int(np.floor(step_count)) + 1):
                 intermediate_position = start_position + direction * i
                 self.path.append((start_position + direction * i).tolist())
-                if not self.check_workspace(intermediate_position, elbow_left=True):
+                if not self.check_workspace(intermediate_position, elbow_right=True):
                     return False
             self.path.append(target_position)
             return True
         
+        
     def move_j(self, target_position):
-        if not self.check_workspace(target_position, elbow_left=True):
+        if not self.check_workspace(target_position, elbow_right=True):
             return False
         
         self.path.append(target_position)
         return True
+    
     
     def move(self, tolerance=2):
         if self.path:
@@ -212,30 +242,3 @@ class Robot:
                 self.path.pop(0)
             else:
                 self.set_tcp_position(target_position)
-    """
-    def change_motor_mode(self, mode):
-        self.motor_1.change_mode(mode)
-        self.motor_2.change_mode(mode)
-        self.motor_3.change_mode(mode)
-
-    """
-    def joystick_control(self, joystick_x, joystick_y):
-        self.motor_1.set_speed(joystick_y * 10)
-        self.motor_2.set_speed(joystick_x * 10)
-
-
-    def move_jacobian(self, joystick_x, joystick_y):
-        theta1, theta2 = self.get_motor_positions()
-        J = np.array([
-            [75 * np.sin(theta1) - 75 * np.sin(theta1 + theta2), -75 * np.sin(theta1 + theta2)],
-            [75 * np.cos(theta1 + theta2) - 75 * np.cos(theta1), 75 * np.cos(theta1 + theta2)]
-        ])
-        try:
-            J_inv = np.linalg.inv(J)
-        except np.linalg.LinAlgError:
-            print("\nJacobian is singular, cannot move.")
-            return
-        d_theta = J_inv @ np.array([joystick_x, joystick_y])
-        self.motor_1.set_speed(-d_theta[0] * 4096 / 2 / np.pi)
-        self.motor_2.set_speed(-d_theta[1] * 4096 / 2 / np.pi)
-    """
