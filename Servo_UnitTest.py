@@ -3,23 +3,34 @@ Manual test script for StepperController on COM7.
 Run from the same folder as stepper_controller.py.
 """
 
+OFFSET_SERVO3 = -5230
+OFFSET_SERVO4 = -518
+OFFSET_SERVO5 = -241
+
+import os
 import sys
 import time
 sys.path.insert(0, "..")   # adjust if needed
 
-from stepper import StepperController
+from Servo import Servo_Motor
+from STservo_sdk import * 
+from dotenv import load_dotenv
+load_dotenv()
+COM_PORT_SERVO = os.getenv("COM_PORT_SERVO")
+print(f"Using COM port for servo: {COM_PORT_SERVO}")
+
+port_handler = PortHandler(COM_PORT_SERVO)
+servo3 = Servo_Motor(id=1, offset=OFFSET_SERVO3, port=COM_PORT_SERVO, model="st3215", port_handler=port_handler)
+servo4 = Servo_Motor(id=4, offset=OFFSET_SERVO4, port=COM_PORT_SERVO, model="sc09", port_handler=port_handler)
+servo5 = Servo_Motor(id=5, offset=OFFSET_SERVO5, port=COM_PORT_SERVO, model="sc09", port_handler=port_handler)
+
+servo3.set_position_raw(10)
+
+while True:
+    pos3 = servo3.get_position_raw()
+    print(f"Servo 3 position: {pos3:.2f}")
+    time.sleep(0.2)
 
 
-stepper = StepperController(offset1=0, offset2=0, com_port="COM7")
-home_status = stepper.home(2, speed=6000)
-print(f"Home status: {home_status}")
-home_status = stepper.home(1, speed=400)
-print(f"Home status: {home_status}")
-pos2 = stepper.get_position(2)
-print(f"Position of motor 2: {pos2:.2f} mm")
-status = stepper.set_position(2, -50, speed=4000)
-print(f"Set position status: {status}")
-time.sleep(20)
-pos3 = stepper.get_position(2)
-print(f"Position of motor 2 after move: {pos3:.2f} mm")
+
 
