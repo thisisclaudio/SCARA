@@ -8,7 +8,7 @@ from STservo_sdk import *                  # Uses STServo SDK library
 
 load_dotenv()
 
-com_port_motor = "COM10"
+com_port_motor = os.getenv("COM_PORT_SERVO")
 portHandler = PortHandler(com_port_motor)
 packetHandler = sts(portHandler)
 

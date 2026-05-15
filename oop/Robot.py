@@ -1,4 +1,4 @@
-from Motor import Motor
+from Servo import Motor
 from Stepper import Stepper
 import sys
 import os
