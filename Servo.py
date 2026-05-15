@@ -31,6 +31,7 @@ class Servo_Motor:
         self.packet_handler.change_hold(self.id, 0)
         print(f"Motor {self.id} shutdown")
 
+
     def get_position_raw(self):        
         if self.model == "sc09": 
             position, comm_result, error = self.packet_handler.ReadPos(self.id)
