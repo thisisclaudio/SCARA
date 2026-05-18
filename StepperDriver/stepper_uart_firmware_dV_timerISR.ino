@@ -34,16 +34,16 @@
 #define PIN_HOME2 35
 
 // ─── Standardwerte Achse 1 ───────────────────────────────────────────
-#define DEFAULT_MAX_SPEED_1  400.0f
-#define DEFAULT_ACCEL_1      600.0f
+#define DEFAULT_MAX_SPEED_1  1000.0f
+#define DEFAULT_ACCEL_1      2000.0f
 #define HOMING_SPEED_1       300.0f
 #define HOMING_ACCEL_1       600.0f
 
 // ─── Standardwerte Achse 2 ───────────────────────────────────────────
 #define DEFAULT_MAX_SPEED_2  6000.0f
-#define DEFAULT_ACCEL_2      30000.0f
-#define HOMING_SPEED_2       6000.0f
-#define HOMING_ACCEL_2       30000.0f
+#define DEFAULT_ACCEL_2      90000.0f
+#define HOMING_SPEED_2       18000.0f
+#define HOMING_ACCEL_2       90000.0f
 
 #define HOME_SWITCH_ACTIVE LOW  // LOW wenn Schalter gedrückt
 
