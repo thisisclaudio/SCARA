@@ -35,7 +35,7 @@ class Robot:
     MAX_AXIS_4 = np.pi/2
 
     SPEED_AXIS_1 = 1000/3200*2*np.pi        # rad/s
-    SPEED_AXIS_2 = 5000/3200*8             # mm/s
+    SPEED_AXIS_2 = 18000/3200*8             # mm/s
     ACCELERATION_AXIS_2 = 90000        # rad/s^2
     SPEED_AXIS_3 = 1000/4096*2*np.pi        # rad/s
     SPEED_AXIS_4 = 300/(1024*5/6)*2*np.pi   # rad/s
@@ -197,7 +197,16 @@ class Robot:
         print(f"Target positions: theta1={theta1_soll}, z={z_soll}, theta2={theta2_soll}, theta3={theta3_soll}")
 
         theta1_time = abs(theta1_soll - theta1_ist) / self.SPEED_AXIS_1
-        z_time = abs(z_soll - z_ist) / self.SPEED_AXIS_2
+        
+        z_time_accel = self.SPEED_AXIS_2 / self.ACCELERATION_AXIS_2 * 2  # Time to accelerate to max speed and decelerate back to zero
+        z_distance_accel = 0.5 * self.ACCELERATION_AXIS_2 * (z_time_accel / 2)**2  # Distance covered during acceleration and deceleration
+        z_time_vmax = abs(z_soll - z_ist - z_distance_accel) / self.SPEED_AXIS_2
+        if z_time_vmax < 0:
+            # If the distance is too short to reach max speed, calculate the time for a triangular profile
+            z_time = 2 * np.sqrt(abs(z_soll - z_ist) / self.ACCELERATION_AXIS_2)
+        else:
+            z_time = z_time_accel + z_time_vmax
+
         theta2_time = abs(theta2_soll - theta2_ist) / self.SPEED_AXIS_3
         theta3_time = abs(theta3_soll - theta3_ist) / self.SPEED_AXIS_4
 
