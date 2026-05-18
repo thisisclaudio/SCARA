@@ -1,6 +1,7 @@
 import threading
 import json
 import time
+import numpy as np
 import serial
 
 
@@ -20,8 +21,6 @@ class StepperController:
 
     def get_position_raw(self, motor_id):
         self.serial.send({"id": motor_id, "cmd": "get_pos"})
-        #come back to this 
-        print("Waiting for position response...")
         response = self.serial.get_latest_data()
         while response is None:
             time.sleep(0.01)
@@ -47,7 +46,7 @@ class StepperController:
     def get_position(self, motor_id):
         position_raw = self.get_position_raw(motor_id)
         if motor_id == 1:
-            return (position_raw - self.offset1) * 2 * 3.141592653589793 / 3200
+            return (position_raw - self.offset1) * 2 * np.pi / 3200
         elif motor_id == 2:
             return (self.offset2 - position_raw) / 3200 * 8 
             # 8mm pro Umdrehung 
@@ -64,23 +63,26 @@ class StepperController:
         return speed
     
 
-    def set_position_raw(self, motor_id, position, speed=1000):
+    def set_position_raw(self, motor_id, position, speed=200):
         #debug msg
         print(f"Setting motor {motor_id} to raw position {position} with speed {speed}")
-        self.serial.send({"id": motor_id, "cmd": "move_to", "pos": position})
+        self.serial.send({"id": motor_id, "cmd": "move_to", "pos": position, "speed": speed})
         status = self.serial.get_latest_data()
         while status is None:
             time.sleep(0.01)
             status = self.serial.get_latest_data()
-
+            
         return status
 
 
     def set_position(self, motor_id, position, speed=200):
         if motor_id == 1:
-            position_raw = int(position * 3200 / (2 * 3.141592653589793) + self.offset1)
+            position_raw = int(position * 3200 / (2 * np.pi) + self.offset1)
+            speed = int(speed / (2 * np.pi) * 3200)  # Convert rad/s to raw speed
         elif motor_id == 2:
             position_raw = int(self.offset2 - position * 3200 / 8)
+            speed = int(speed / 8 * 3200)  # Convert mm/s to raw speed
+
         status = self.set_position_raw(motor_id, position_raw, speed)
         return status
 

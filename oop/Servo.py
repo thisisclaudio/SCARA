@@ -1,5 +1,7 @@
 
 from STservo_sdk import * 
+import numpy as np
+
 
 class Servo_Motor:
     def __init__(self, id, offset, model, port_handler=None):
@@ -62,13 +64,13 @@ class Servo_Motor:
         return pos
     
     
-    
     def get_position(self):
         position_raw = self.get_position_raw()
         if self.model == "sc09":
-            return position_raw * 2 * 3.141592653589793 *5 / 6 / 1024
+            #return position_raw * 2 * np.pi * 5 / 6 / 1024
+            return position_raw / (3.15 * 180 / np.pi) #Steigung 3.15 empirisch ermittelt, da die SC09 nicht genau 300° drehen
         else:
-            return position_raw * 2 * 3.141592653589793 / 4096
+            return position_raw * 2 * np.pi / 4096
 
 
     def get_speed(self):
@@ -76,16 +78,7 @@ class Servo_Motor:
         return speed
     
 
-    def set_position(self, position, speed=1000):
-        if self.model == "sc09":
-            position_raw = int(position * 1024 / (2 * 3.141592653589793) + 1024)
-        else:
-            position_raw = int(position / (2 * 3.141592653589793) * 4096)
-
-        self.set_position_raw(position_raw, speed)
-        return
-
-    def set_position_raw(self, position, speed=100):
+    def set_position_raw(self, position, speed=200):
         if self.model == "sc09":
             position = position - self.offset - 512
             if position > 1024:
@@ -95,7 +88,6 @@ class Servo_Motor:
             self.packet_handler.WritePos(self.id, int(position), 0, int(speed))
 
         else: #st3215
-            print(f"Pos before thing: {position}")
             position = position - self.offset - 2048
             position = - position 
             if position > 4096:
@@ -103,7 +95,18 @@ class Servo_Motor:
             self.packet_handler.WritePosEx(self.id, int(position), int(speed), 0)
             
         
-
+    def set_position(self, position, speed=200):
+        if self.model == "sc09":
+            #position_raw = int(position * 1024 / (2 * np.pi) + 1024)
+            position_raw = int(position * (3.15 * 180 / np.pi))
+            speed = int(speed / (2 * np.pi) * (1024 * 5 / 6))  # Convert rad/s to raw speed
+        else:
+            position_raw = int(position / (2 * np.pi) * 4096)
+            speed = int(speed / (2 * np.pi) * 4096)  # Convert rad/s to raw speed
+        
+        self.set_position_raw(position_raw, speed)
+        return
+    
 
     def change_mode(self, mode):
         if self.model == "sc09":

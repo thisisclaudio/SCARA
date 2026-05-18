@@ -19,7 +19,7 @@ class Robot:
     OFFSET_SERVO4 = -2
     OFFSET_SERVO5 = -241
     
-    OFFSET_AXIS_01 = 141
+    OFFSET_AXIS_01 = 155
     LENGTH_AXIS_23 = 125
     LENGTH_AXIS_34 = 125
     OFFSET_AXIS_34 = -30
@@ -33,6 +33,12 @@ class Robot:
     MAX_AXIS_3 = np.pi/2
     MIN_AXIS_4 = -np.pi/2
     MAX_AXIS_4 = np.pi/2
+
+    SPEED_AXIS_1 = 1000/3200*2*np.pi        # rad/s
+    SPEED_AXIS_2 = 5000/3200*8             # mm/s
+    ACCELERATION_AXIS_2 = 90000        # rad/s^2
+    SPEED_AXIS_3 = 1000/4096*2*np.pi        # rad/s
+    SPEED_AXIS_4 = 300/(1024*5/6)*2*np.pi   # rad/s
 
 
     def __init__(self):
@@ -129,11 +135,12 @@ class Robot:
         return pos
     
     
-    def set_tcp_position(self, tcp_position):
+    def set_tcp_position(self, tcp_position, speed_factor=1):
         x, y, z, theta = tcp_position
 
         z = z - self.OFFSET_AXIS_01 - self.OFFSET_AXIS_34 - self.OFFSET_GRIPPER
         theta3 = theta
+
         c = np.sqrt(x**2 + y**2)
         a = self.LENGTH_AXIS_23
         b = self.LENGTH_AXIS_34
@@ -141,17 +148,10 @@ class Robot:
         phi = np.arccos((a**2 + b**2 - c**2) / (2*a*b))
         theta2 = np.pi - phi
 
-        beta = (np.pi - phi)/2
-        print(f"beta: {beta}")
         beta = theta2/2
-        print(f"beta: {beta}")
         alpha = np.arctan2(y, x)
         theta1 = alpha - beta
 
-        """
-        theta2 = np.arccos((self.LENGTH_AXIS_23**2 + self.LENGTH_AXIS_34**2 - (x**2 + y**2)) / (2*self.LENGTH_AXIS_23*self.LENGTH_AXIS_34))
-        theta1 = np.arctan2(y,x) - theta2/2
-        """
         soll_pos = [theta1, z, theta2, theta3]
         
         print(f"Setting TCP position to: x={x}, y={y}, z={z}, theta={theta}")
@@ -161,7 +161,7 @@ class Robot:
             if not self.check_workspace(index, pos, elbow_right=True):
                 return False
         
-        self.move_sync(soll_pos)
+        self.move_sync(soll_pos, speed_factor=speed_factor)
         return True
     
     
@@ -185,7 +185,7 @@ class Robot:
                 return True
     
     
-    def move_sync(self, soll_pos, speed=400):
+    def move_sync(self, soll_pos, speed_factor=1):
         theta1_ist, z_ist, theta2_ist, theta3_ist = self.get_motor_positions()
         theta1_soll, z_soll, theta2_soll, theta3_soll = soll_pos
 
@@ -193,22 +193,29 @@ class Robot:
             if not self.check_workspace(index, pos, elbow_right=True):
                 return False
 
-        z_diff = abs(z_soll - z_ist)
-        theta1_diff = abs(theta1_soll - theta1_ist)
-        theta2_diff = abs(theta2_soll - theta2_ist)
-        theta3_diff = abs(theta3_soll - theta3_ist)
-    
-        max_diff = max(theta1_diff, z_diff, theta2_diff, theta3_diff)
-        
-        speed_theta1 = speed * theta1_diff / max_diff
-        speed_z = speed * z_diff / max_diff
-        speed_theta2 = speed * theta2_diff / max_diff
-        speed_theta3 = speed * theta3_diff / max_diff
+        print(f"Current positions: theta1={theta1_ist}, z={z_ist}, theta2={theta2_ist}, theta3={theta3_ist}")
+        print(f"Target positions: theta1={theta1_soll}, z={z_soll}, theta2={theta2_soll}, theta3={theta3_soll}")
 
-        self.stepper_controller.set_position(1, theta1_soll)
-        self.stepper_controller.set_position(2, z_soll)
-        self.motor_3.set_position(theta2_soll, speed = 500)
-        self.motor_4.set_position(theta3_soll, speed = 200)
+        theta1_time = abs(theta1_soll - theta1_ist) / self.SPEED_AXIS_1
+        z_time = abs(z_soll - z_ist) / self.SPEED_AXIS_2
+        theta2_time = abs(theta2_soll - theta2_ist) / self.SPEED_AXIS_3
+        theta3_time = abs(theta3_soll - theta3_ist) / self.SPEED_AXIS_4
+
+        max_time = max(theta1_time, z_time, theta2_time, theta3_time)
+
+        print(f"max_time: {max_time}, theta1_time: {theta1_time}, z_time: {z_time}, theta2_time: {theta2_time}, theta3_time: {theta3_time}")
+
+        speed_theta1 = speed_factor * self.SPEED_AXIS_1 * (theta1_time / max_time)
+        speed_z = speed_factor * self.SPEED_AXIS_2 * (z_time / max_time)
+        speed_theta2 = speed_factor * self.SPEED_AXIS_3 * (theta2_time / max_time)
+        speed_theta3 = speed_factor * self.SPEED_AXIS_4 * (theta3_time / max_time)
+
+        print(f"Calculated speeds: speed_theta1={speed_theta1}, speed_z={speed_z}, speed_theta2={speed_theta2}, speed_theta3={speed_theta3}")
+
+        self.stepper_controller.set_position(1, theta1_soll, speed=speed_theta1)
+        self.stepper_controller.set_position(2, z_soll, speed=speed_z)
+        self.motor_3.set_position(theta2_soll, speed=speed_theta2)
+        self.motor_4.set_position(theta3_soll, speed=speed_theta3)
 
 
     def print_tcp_position(self):

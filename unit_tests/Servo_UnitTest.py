@@ -7,8 +7,13 @@ OFFSET_SERVO3 = 323
 OFFSET_SERVO4 = -2
 OFFSET_SERVO5 = -241
 
-import os
+import numpy as np
+from pathlib import Path
 import sys
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+import os
+
 import time
 sys.path.insert(0, "..")   # adjust if needed
 
@@ -26,29 +31,12 @@ servo5 = Servo_Motor(id=5, offset=OFFSET_SERVO5, model="sc09", port_handler=port
 pos4 = servo4.get_position_raw()  # initialize position
 
 if True:
-    servo4.set_position(1.5, speed=500) #802
+    servo4.set_position(0, speed=500) #802
     time.sleep(3)
-    pos4 =servo4.get_position_raw()
-    print(f"raw Pi/2: {pos4:.2f}")
-    pos4 =servo4.get_position()
-    print(f"Pi/2: {pos4:.2f}")
-    
 
-    servo4.set_position(-1.5, speed=500) #203
-    time.sleep(3)
-    pos4 =servo4.get_position_raw()
-    print(f"raw -Pi/2: {pos4:.2f}")
-
-    pos4 =servo4.get_position()
-    print(f" -Pi/2: {pos4:.2f}")
-
-
-    servo4.set_position(0, speed=500)
-    time.sleep(3)
-    pos4 =servo4.get_position()
-    print(f"0: {pos4:.2f}")
-    pos4 =servo4.get_position_raw()
-    print(f"0: {pos4:.2f}")
+    for i in range(10):
+        servo4.set_position(-np.pi/2 + np.pi/9*i, speed=500)
+        time.sleep(3)
 
 while True:
     pos4 =servo4.get_position()
