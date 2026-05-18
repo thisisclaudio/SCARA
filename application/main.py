@@ -1,27 +1,28 @@
-import sys, time
+import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent / "oop"))
-#from Robot import Robot
+
+from oop.Robot import Robot
 
 from yaml_parser import parse
 
 
 def run(program_file: str):
     steps = parse(program_file)
-    #robot = Robot()
+    robot = Robot()
 
     try:
         for step in steps:
             match step.type:
                 case "moveJ":
                     print(f"Moving to {step.pos} with moveJ")
-                    #robot.move_j(step.pos)
-                    #robot.move()
+                    robot.move_j(step.pos)
+                    robot.move()
                 case "moveL":
                     print(f"Moving to {step.pos} with moveL")
-                    #robot.move_l(step.pos)
-                    #robot.move()
+                    robot.move_l(step.pos)
+                    robot.move()
                 case "gripperSetPos":
                     print(f"Setting gripper position to {step.pos}")
                     # TODO: gripper integration
@@ -32,7 +33,7 @@ def run(program_file: str):
                 case _:
                     print(f"Unknown step type: {step.type}")
     finally:
-        #robot.shutdown()
+        robot.shutdown()
         pass
 
 

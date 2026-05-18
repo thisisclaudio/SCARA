@@ -1,6 +1,6 @@
 from re import match
-from Motor import Motor
-from Stepper import StepperController
+from oop.Servo import Servo_Motor
+from oop.Stepper import StepperController
 import sys
 import os
 import numpy as np
@@ -13,22 +13,22 @@ from STservo_sdk import *
     
 class Robot:
     # Constants for kinematics
-    OFFSET_STEPPER_1 = 0
-    OFFSET_STEPPER_2 = 0
-    OFFSET_SERVO3 = 0
-    OFFSET_SERVO4 = 0
-    OFFSET_SERVO5 = 0
+    OFFSET_STEPPER_1 = 1400
+    OFFSET_STEPPER_2 = 60000
+    OFFSET_SERVO3 = 323
+    OFFSET_SERVO4 = -2
+    OFFSET_SERVO5 = -241
     
     OFFSET_AXIS_01 = 141
     LENGTH_AXIS_23 = 125
     LENGTH_AXIS_34 = 125
     OFFSET_AXIS_34 = -30
     OFFSET_GRIPPER = -125
-        
-    MIN_AXIS_1 = 0
-    MAX_AXIS_1 = 290
-    MIN_AXIS_2 = -np.pi/2
-    MAX_AXIS_2 = np.pi/2
+    
+    MIN_AXIS_1 = -np.pi/2
+    MAX_AXIS_1 = np.pi/2
+    MIN_AXIS_2 = 0
+    MAX_AXIS_2 = 145
     MIN_AXIS_3 = -np.pi/2
     MAX_AXIS_3 = np.pi/2
     MIN_AXIS_4 = -np.pi/2
@@ -37,30 +37,26 @@ class Robot:
 
     def __init__(self):
         load_dotenv()
-        self.port_handler = PortHandler(os.getenv("COM_PORT_MOTOR"))
-        
+
+        self.port_handler = PortHandler(os.getenv("COM_PORT_SERVO"))
         # open port
         if self.port_handler.openPort():
             print("Succeeded to open the port")
         else:
             print("Failed to open the port")
             quit()
-
-        # set baudrate
-        if self.port_handler.setBaudRate(1000000):
-            print("Succeeded to change the baudrate")
-        else:
-            print("Failed to change the baudrate")
-            quit()
         
         stepper_COM_port = os.getenv("COM_PORT_STEPPER")
         
         self.stepper_controller = StepperController(self.OFFSET_STEPPER_1, self.OFFSET_STEPPER_2, stepper_COM_port)
-        self.motor_3 = Motor(3, self.OFFSET_SERVO3, "st3215", self.port_handler)
-        self.motor_4 = Motor(4, self.OFFSET_SERVO4, "sc09", self.port_handler)
-        self.motor_5 = Motor(5, self.OFFSET_SERVO5, "sc09", self.port_handler)
+        self.motor_3 = Servo_Motor(3, self.OFFSET_SERVO3, "st3215", self.port_handler)
+        self.motor_4 = Servo_Motor(4, self.OFFSET_SERVO4, "sc09", self.port_handler)
+        self.motor_5 = Servo_Motor(5, self.OFFSET_SERVO5, "sc09", self.port_handler)
 
         self.path = []
+        self.stepper_controller.home(2)
+        self.stepper_controller.home(1)
+        
 
 
     def shutdown(self):
@@ -92,7 +88,7 @@ class Robot:
 
 
     def get_tcp_position(self):
-        l1, theta1, theta2, theta3 = self.get_motor_positions()
+        theta1, l1, theta2, theta3 = self.get_motor_positions()
         
         T54 = np.array([
             [1, 0, 0, 0],
@@ -127,7 +123,7 @@ class Robot:
         
         pos = np.array([0, 0, 0, 1])
         pos = T10 @ T21 @ T32 @ T43 @ T54 @ pos
-        pos.append(theta3)
+        pos = np.append(pos[:3], theta3)
         
         # Format: [x, y, z, theta]
         return pos
@@ -138,13 +134,31 @@ class Robot:
 
         z = z - self.OFFSET_AXIS_01 - self.OFFSET_AXIS_34 - self.OFFSET_GRIPPER
         theta3 = theta
-        theta2 = np.arccos((self.LENGTH_AXIS_23**2 + self.LENGTH_AXIS_34**2 - (x**2 + y**2)) / (2*self.LENGTH_AXIS_23*self.LENGTH_AXIS_34))
-        theta1 = -np.pi/2 + np.arctan2(y,x) - theta2/2
+        c = np.sqrt(x**2 + y**2)
+        a = self.LENGTH_AXIS_23
+        b = self.LENGTH_AXIS_34
 
-        soll_pos = [z, theta1, theta2, theta3]
+        phi = np.arccos((a**2 + b**2 - c**2) / (2*a*b))
+        theta2 = np.pi - phi
+
+        beta = (np.pi - phi)/2
+        print(f"beta: {beta}")
+        beta = theta2/2
+        print(f"beta: {beta}")
+        alpha = np.arctan2(y, x)
+        theta1 = alpha - beta
+
+        """
+        theta2 = np.arccos((self.LENGTH_AXIS_23**2 + self.LENGTH_AXIS_34**2 - (x**2 + y**2)) / (2*self.LENGTH_AXIS_23*self.LENGTH_AXIS_34))
+        theta1 = np.arctan2(y,x) - theta2/2
+        """
+        soll_pos = [theta1, z, theta2, theta3]
         
+        print(f"Setting TCP position to: x={x}, y={y}, z={z}, theta={theta}")
+        print(f"Calculated joint angles: theta1={theta1}, z={z}, theta2={theta2}, theta3={theta3}")
+
         for index, pos in enumerate(soll_pos):
-            if not self.check_workspace(index, pos, elbow_left=True):
+            if not self.check_workspace(index, pos, elbow_right=True):
                 return False
         
         self.move_sync(soll_pos)
@@ -172,25 +186,29 @@ class Robot:
     
     
     def move_sync(self, soll_pos, speed=400):
-        z_ist, theta1_ist, theta2_ist, theta3_ist = self.get_motor_positions()
-        z_soll, theta1_soll, theta2_soll, theta3_soll = soll_pos
+        theta1_ist, z_ist, theta2_ist, theta3_ist = self.get_motor_positions()
+        theta1_soll, z_soll, theta2_soll, theta3_soll = soll_pos
+
+        for index, pos in enumerate(soll_pos):
+            if not self.check_workspace(index, pos, elbow_right=True):
+                return False
 
         z_diff = abs(z_soll - z_ist)
         theta1_diff = abs(theta1_soll - theta1_ist)
         theta2_diff = abs(theta2_soll - theta2_ist)
         theta3_diff = abs(theta3_soll - theta3_ist)
     
-        max_diff = max(z_diff, theta1_diff, theta2_diff, theta3_diff)
+        max_diff = max(theta1_diff, z_diff, theta2_diff, theta3_diff)
         
-        speed_z = speed * z_diff / max_diff
         speed_theta1 = speed * theta1_diff / max_diff
+        speed_z = speed * z_diff / max_diff
         speed_theta2 = speed * theta2_diff / max_diff
         speed_theta3 = speed * theta3_diff / max_diff
 
-        self.stepper_controller.set_position(1, z_soll, speed_z)
-        self.stepper_controller.set_position(2, theta1_soll, speed_theta1)
-        self.motor_3.set_position(theta2_soll, speed_theta2)
-        self.motor_4.set_position(theta3_soll, speed_theta3)
+        self.stepper_controller.set_position(1, theta1_soll)
+        self.stepper_controller.set_position(2, z_soll)
+        self.motor_3.set_position(theta2_soll, speed = 500)
+        self.motor_4.set_position(theta3_soll, speed = 200)
 
 
     def print_tcp_position(self):
@@ -200,8 +218,9 @@ class Robot:
 
     
     def move_l(self, target_position, start_position=None, step_size=10):
-        if not self.check_workspace(target_position, elbow_right=True):
-            return False
+        for index, pos in enumerate(target_position):
+            if not self.check_workspace(index, pos, elbow_right=True):
+                return False
         
         if not start_position:
             if not self.path:
@@ -222,14 +241,18 @@ class Robot:
                 if not self.check_workspace(intermediate_position, elbow_right=True):
                     return False
             self.path.append(target_position)
-            return True
+
+        self.move()
+        return True
         
         
     def move_j(self, target_position):
-        if not self.check_workspace(target_position, elbow_right=True):
-            return False
-        
+        for index, pos in enumerate(target_position):
+            if not self.check_workspace(index, pos, elbow_right=True):
+                return False
+
         self.path.append(target_position)
+        self.move()
         return True
     
     

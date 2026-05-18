@@ -29,8 +29,8 @@ class StepperController:
         return response["pos"] if "pos" in response else "blöd"
 
 
-    def home(self, motor_id, speed=400):
-        self.serial.send({"id": motor_id, "cmd": "home", "speed": speed})
+    def home(self, motor_id):
+        self.serial.send({"id": motor_id, "cmd": "home"})
         status = self.serial.get_latest_data()
         while status is None:
             time.sleep(0.01)
@@ -65,11 +65,14 @@ class StepperController:
     
 
     def set_position_raw(self, motor_id, position, speed=1000):
-        self.serial.send({"id": motor_id, "cmd": "move_to", "pos": position, "speed": speed})
+        #debug msg
+        print(f"Setting motor {motor_id} to raw position {position} with speed {speed}")
+        self.serial.send({"id": motor_id, "cmd": "move_to", "pos": position})
         status = self.serial.get_latest_data()
         while status is None:
             time.sleep(0.01)
             status = self.serial.get_latest_data()
+
         return status
 
 

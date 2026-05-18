@@ -3,13 +3,8 @@ Manual test script for StepperController on COM7.
 Run from the same folder as stepper_controller.py.
 """
 
-<<<<<<< HEAD
-OFFSET_SERVO3 = -5230
-OFFSET_SERVO4 = -518
-=======
 OFFSET_SERVO3 = 323
 OFFSET_SERVO4 = -2
->>>>>>> Nico
 OFFSET_SERVO5 = -241
 
 import os
@@ -17,7 +12,7 @@ import sys
 import time
 sys.path.insert(0, "..")   # adjust if needed
 
-from Servo import Servo_Motor
+from oop.Servo import Servo_Motor
 from STservo_sdk import * 
 from dotenv import load_dotenv
 load_dotenv()
