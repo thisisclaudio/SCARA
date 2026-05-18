@@ -3,8 +3,8 @@ Manual test script for StepperController on COM7.
 Run from the same folder as stepper_controller.py.
 """
 
-OFFSET_SERVO3 = -5230
-OFFSET_SERVO4 = -518
+OFFSET_SERVO3 = 323
+OFFSET_SERVO4 = -2
 OFFSET_SERVO5 = -241
 
 import os
@@ -20,19 +20,40 @@ COM_PORT_SERVO = os.getenv("COM_PORT_SERVO")
 print(f"Using COM port for servo: {COM_PORT_SERVO}")
 
 port_handler = PortHandler(COM_PORT_SERVO)
-servo3 = Servo_Motor(id=1, offset=OFFSET_SERVO3, model="st3215", port_handler=port_handler)
+servo3 = Servo_Motor(id=3, offset=OFFSET_SERVO3, model="st3215", port_handler=port_handler)
 servo4 = Servo_Motor(id=4, offset=OFFSET_SERVO4, model="sc09", port_handler=port_handler)
 servo5 = Servo_Motor(id=5, offset=OFFSET_SERVO5, model="sc09", port_handler=port_handler)
-pos3 = servo3.get_position_raw()  # initialize position
-print(f"Initial Servo 3 position: {pos3:.2f}")
+pos4 = servo4.get_position_raw()  # initialize position
 
-servo3.set_position_raw(0)
+if True:
+    servo4.set_position(1.5, speed=500) #802
+    time.sleep(3)
+    pos4 =servo4.get_position_raw()
+    print(f"raw Pi/2: {pos4:.2f}")
+    pos4 =servo4.get_position()
+    print(f"Pi/2: {pos4:.2f}")
+    
+
+    servo4.set_position(-1.5, speed=500) #203
+    time.sleep(3)
+    pos4 =servo4.get_position_raw()
+    print(f"raw -Pi/2: {pos4:.2f}")
+
+    pos4 =servo4.get_position()
+    print(f" -Pi/2: {pos4:.2f}")
+
+
+    servo4.set_position(0, speed=500)
+    time.sleep(3)
+    pos4 =servo4.get_position()
+    print(f"0: {pos4:.2f}")
+    pos4 =servo4.get_position_raw()
+    print(f"0: {pos4:.2f}")
 
 while True:
-    pos3 = servo3.get_position_raw()
-    print(f"Servo 3 position: {pos3:.2f}")
-    time.sleep(0.2)
-
-
-
+    pos4 =servo4.get_position()
+    print(f"Position: {pos4:.2f}")
+    pos4 =servo4.get_position_raw()
+    print(f"Position raw: {pos4:.2f}")
+    time.sleep(1)
 

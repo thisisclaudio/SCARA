@@ -17,14 +17,13 @@ def check_ids(id1, id2):
         return False
 
 # Set up argument parsing
-parser = argparse.ArgumentParser(description="Check if two IDs are within range (1-20).")
-parser.add_argument("id_old", type=int, help="First ID (1-20)")
-parser.add_argument("id_new", type=int, help="Second ID (1-20)")
 
-args = parser.parse_args()
+
+id_old = 1
+id_new = 3
 
 # Validate the IDs
-if check_ids(args.id_old, args.id_new):
+if check_ids(id_old, id_new):
     print("Proceeding with the operation.")
 else:
     print("Operation aborted.")
@@ -35,10 +34,6 @@ load_dotenv()
 com_port_motor = "COM10"
 portHandler = PortHandler(com_port_motor)
 packetHandler = sts(portHandler)
-
-
-portHandler = PortHandler(com_port_motor)
-packetHandler = scscl(portHandler)
     
 # Open port
 if portHandler.openPort():
@@ -54,12 +49,12 @@ else:
     print("Failed to change the baudrate")
     quit()
 
-sts_comm_result, sts_error = packetHandler.changeID(args.id_old, args.id_new) 
+sts_comm_result, sts_error = packetHandler.changeID(id_old, id_new) 
 if sts_comm_result != COMM_SUCCESS:
     print("%s" % packetHandler.getTxRxResult(sts_comm_result))
 elif sts_error != 0:
     print("%s" % packetHandler.getRxPacketError(sts_error))
-    print("Now STServo ID is %d" % args.id_new)
+    print("Now STServo ID is %d" % id_new)
 
 # Close port
 portHandler.closePort()
