@@ -29,7 +29,12 @@ class Servo_Motor:
 
 
     def shutdown(self):
-        self.packet_handler.change_hold(self.id, 0)
+        if self.model == "sc09":
+            #TODO: Implement proper shutdown for SC09
+            print("Warning: Proper shutdown not implemented for SC09")
+        else:    
+            self.packet_handler.change_hold(self.id, 0)
+        
         print(f"Motor {self.id} shutdown")
 
 
@@ -79,6 +84,8 @@ class Servo_Motor:
     
 
     def set_position_raw(self, position, speed=200):
+        #debug print
+        #print(f"Setting motor {self.id} model {self.model} to position {position} with speed {speed}")
         if self.model == "sc09":
             position = position - self.offset - 512
             if position > 1024:

@@ -13,10 +13,10 @@ from oop.Stepper import StepperController
 offset1 = 1400
 offset2 = 60000
 
-stepper = StepperController(offset1=offset1, offset2=offset2, com_port="COM7")
+stepper = StepperController(offset1=offset1, offset2=offset2, com_port="/dev/cu.usbserial-0001")
 
-axis = 1
-pos = -1.28
+axis = 2
+pos = 50
 home_status = stepper.home(axis)
 print(f"Home status: {home_status}")
 time.sleep(1)
@@ -27,7 +27,7 @@ pos1 = stepper.get_position(axis)
 print(f"Position of motor {axis}: {pos1:.2f} mm")
 
 time.sleep(1)
-status = stepper.set_position(axis, pos, speed=400)
+status = stepper.set_position(axis, pos)
 print(f"Set position status: {status}")
 
 

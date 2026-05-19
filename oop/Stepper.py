@@ -65,7 +65,7 @@ class StepperController:
 
     def set_position_raw(self, motor_id, position, speed=200):
         #debug msg
-        print(f"Setting motor {motor_id} to raw position {position} with speed {speed}")
+        #print(f"Setting motor {motor_id} to raw position {position} with speed {speed}")
         self.serial.send({"id": motor_id, "cmd": "move_to", "pos": position, "speed": speed})
         status = self.serial.get_latest_data()
         while status is None:

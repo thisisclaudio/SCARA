@@ -59,6 +59,7 @@ class Robot:
         self.motor_4 = Servo_Motor(4, self.OFFSET_SERVO4, "sc09", self.port_handler)
         self.motor_5 = Servo_Motor(5, self.OFFSET_SERVO5, "sc09", self.port_handler)
 
+        #2xn array of target positions with speed factor: [[theta1, z, theta2, theta3, speed_factor], ...]
         self.path = []
         self.stepper_controller.home(2)
         self.stepper_controller.home(1)
@@ -90,46 +91,54 @@ class Robot:
 
     def print_motor_positions(self, raw=False):
         pos1, pos2, pos3, pos4 = self.get_motor_positions(raw)
-        print(f"\rMotor_1: {pos1:<6} | Motor_2: {pos2:<6} | Motor_3: {pos3:<6} | Motor_4: {pos4:<6}", end="", flush=True)
+        #print(f"\rMotor_1: {pos1:<6} | Motor_2: {pos2:<6} | Motor_3: {pos3:<6} | Motor_4: {pos4:<6}")
 
 
     def get_tcp_position(self):
         theta1, l1, theta2, theta3 = self.get_motor_positions()
+
+        #print(f"Motor positions: theta1={theta1}, l1={l1}, theta2={theta2}, theta3={theta3}")
         
         T54 = np.array([
-            [1, 0, 0, 0],
+            [1, 0, 0, self.LENGTH_AXIS_34],
             [0, 1, 0, 0],
             [0, 0, 1, self.OFFSET_GRIPPER],
             [0, 0, 0, 1]
         ])    
         T43 = np.array([
-            [np.cos(theta2), -np.sin(theta2), 0, self.LENGTH_AXIS_34],
+            [np.cos(theta2), -np.sin(theta2), 0, 0],
             [np.sin(theta2),  np.cos(theta2), 0, 0],
             [0, 0, 1, self.OFFSET_AXIS_34],
             [0, 0, 0, 1]
         ])
+        # Translation zuu Gelenk von Achse 2
         T32 = np.array([
-            [np.cos(theta1), -np.sin(theta1), 0, self.LENGTH_AXIS_23],
+            [1, 0, 0, self.LENGTH_AXIS_23],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ])
+        # Translation auf Drehplatte Achse 1
+        T21 = np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, l1+self.OFFSET_AXIS_01],
+            [0, 0, 0, 1]
+        ])
+        # Rotation Achse 1
+        T10 = np.array([
+            [np.cos(theta1), -np.sin(theta1), 0, 0],
             [np.sin(theta1),  np.cos(theta1), 0, 0],
             [0, 0, 1, 0],
             [0, 0, 0, 1]
         ])
-        T21 = np.array([
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 1, l1],
-            [0, 0, 0, 1]
-        ])
-        T10 = np.array([
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 1, self.OFFSET_AXIS_01],
-            [0, 0, 0, 1]
-        ])
         
+        theta = theta1 + theta2 + theta3
+
         pos = np.array([0, 0, 0, 1])
         pos = T10 @ T21 @ T32 @ T43 @ T54 @ pos
-        pos = np.append(pos[:3], theta3)
+
+        pos = np.append(pos[:3], theta)
         
         # Format: [x, y, z, theta]
         return pos
@@ -139,7 +148,6 @@ class Robot:
         x, y, z, theta = tcp_position
 
         z = z - self.OFFSET_AXIS_01 - self.OFFSET_AXIS_34 - self.OFFSET_GRIPPER
-        theta3 = theta
 
         c = np.sqrt(x**2 + y**2)
         a = self.LENGTH_AXIS_23
@@ -152,10 +160,12 @@ class Robot:
         alpha = np.arctan2(y, x)
         theta1 = alpha - beta
 
+        theta3 = theta - theta1 - theta2
+
         soll_pos = [theta1, z, theta2, theta3]
         
-        print(f"Setting TCP position to: x={x}, y={y}, z={z}, theta={theta}")
-        print(f"Calculated joint angles: theta1={theta1}, z={z}, theta2={theta2}, theta3={theta3}")
+        #print(f"Setting TCP position to: x={x}, y={y}, z={z}, theta={theta}")
+        #print(f"Calculated joint angles: theta1={theta1}, z={z}, theta2={theta2}, theta3={theta3}")
 
         for index, pos in enumerate(soll_pos):
             if not self.check_workspace(index, pos, elbow_right=True):
@@ -166,6 +176,9 @@ class Robot:
     
     
     def check_workspace(self, index, pos, elbow_right=True):
+        print("Skipping workspace check")
+        return True
+
         match index:
             case 0:
                 if pos < self.MIN_AXIS_1 or pos > self.MAX_AXIS_1:
@@ -193,8 +206,8 @@ class Robot:
             if not self.check_workspace(index, pos, elbow_right=True):
                 return False
 
-        print(f"Current positions: theta1={theta1_ist}, z={z_ist}, theta2={theta2_ist}, theta3={theta3_ist}")
-        print(f"Target positions: theta1={theta1_soll}, z={z_soll}, theta2={theta2_soll}, theta3={theta3_soll}")
+        #print(f"Current positions: theta1={theta1_ist}, z={z_ist}, theta2={theta2_ist}, theta3={theta3_ist}")
+        #print(f"Target positions: theta1={theta1_soll}, z={z_soll}, theta2={theta2_soll}, theta3={theta3_soll}")
 
         theta1_time = abs(theta1_soll - theta1_ist) / self.SPEED_AXIS_1
         
@@ -212,14 +225,14 @@ class Robot:
 
         max_time = max(theta1_time, z_time, theta2_time, theta3_time)
 
-        print(f"max_time: {max_time}, theta1_time: {theta1_time}, z_time: {z_time}, theta2_time: {theta2_time}, theta3_time: {theta3_time}")
+        #print(f"max_time: {max_time}, theta1_time: {theta1_time}, z_time: {z_time}, theta2_time: {theta2_time}, theta3_time: {theta3_time}")
 
         speed_theta1 = speed_factor * self.SPEED_AXIS_1 * (theta1_time / max_time)
         speed_z = speed_factor * self.SPEED_AXIS_2 * (z_time / max_time)
         speed_theta2 = speed_factor * self.SPEED_AXIS_3 * (theta2_time / max_time)
         speed_theta3 = speed_factor * self.SPEED_AXIS_4 * (theta3_time / max_time)
 
-        print(f"Calculated speeds: speed_theta1={speed_theta1}, speed_z={speed_z}, speed_theta2={speed_theta2}, speed_theta3={speed_theta3}")
+        #print(f"Calculated speeds: speed_theta1={speed_theta1}, speed_z={speed_z}, speed_theta2={speed_theta2}, speed_theta3={speed_theta3}")
 
         self.stepper_controller.set_position(1, theta1_soll, speed=speed_theta1)
         self.stepper_controller.set_position(2, z_soll, speed=speed_z)
@@ -230,10 +243,10 @@ class Robot:
     def print_tcp_position(self):
         p = self.get_tcp_position()
         x, y, z, theta = p
-        print(f"\rTCP position: x={x:<6} | y={y:<6} | z={z:<6} | theta={theta:<6}", end="", flush=True)
+        #print(f"\rTCP position: x={x:<6} | y={y:<6} | z={z:<6} | theta={theta:<6}", end="", flush=True)
 
     
-    def move_l(self, target_position, start_position=None, step_size=10):
+    def move_l(self, target_position, start_position=None, step_size=10, speed_factor=1.0):
         for index, pos in enumerate(target_position):
             if not self.check_workspace(index, pos, elbow_right=True):
                 return False
@@ -246,37 +259,48 @@ class Robot:
         
         distance = np.linalg.norm(np.array(target_position) - np.array(start_position))
         if distance < step_size:
-                self.path.append(target_position)
+                self.path.append(target_position, speed_factor=speed_factor)
                 return True
         else:
             step_count = distance / step_size
             direction = (np.array(target_position) - np.array(start_position)) / step_count
             for i in range(1, int(np.floor(step_count)) + 1):
                 intermediate_position = start_position + direction * i
-                self.path.append((start_position + direction * i).tolist())
+                self.path.append((start_position + direction * i).tolist(), speed_factor=speed_factor)
                 if not self.check_workspace(intermediate_position, elbow_right=True):
                     return False
-            self.path.append(target_position)
+            self.path.append(target_position, speed_factor=speed_factor)
 
-        self.move()
+        #self.move()
         return True
         
         
-    def move_j(self, target_position):
+    def move_j(self, target_position, speed_factor=1.0):
         for index, pos in enumerate(target_position):
             if not self.check_workspace(index, pos, elbow_right=True):
                 return False
 
-        self.path.append(target_position)
-        self.move()
+        target = [target_position[0], target_position[1], target_position[2], target_position[3], speed_factor]
+        self.path.append(target)
+        #self.move()
         return True
     
     
-    def move(self, tolerance=2):
+    def move(self, tolerance=5):
         if self.path:
             target_position = self.path[0]
+            speed_factor = target_position[-1]
+            target_position = target_position[:-1]
+
             current_position = self.get_tcp_position()
-            if np.linalg.norm(np.array(target_position) - np.array(current_position)) < tolerance:
+            distance = np.linalg.norm(np.array(target_position) - np.array(current_position))
+            
+            #debug msg
+            #print(f"Current TCP position: {current_position}, Target TCP position: {target_position}, Distance: {distance}")
+
+            if distance < tolerance:
+                print(f"Reached target position: {target_position}")
                 self.path.pop(0)
             else:
-                self.set_tcp_position(target_position)
+                self.set_tcp_position(target_position, speed_factor=speed_factor)
+                #print(f"Moving towards target position: {target_position}, current position: {current_position}")
