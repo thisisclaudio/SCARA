@@ -35,7 +35,7 @@ def run(program_file: str):
                         case "closed":
                             robot.move_gripper(distance=0)
                         case _:
-                            if isinstance(step.pos, (int, float)):
+                            if isinstance(step.pos, (int, float)) and 0 <= step.pos <= 40:
                                 robot.move_gripper(distance=step.pos)
                             else:
                                 print(f"Unknown gripper position: {step.pos}")
