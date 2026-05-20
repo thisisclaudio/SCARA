@@ -55,7 +55,16 @@ class Robot:
         self.stepper_controller = StepperController(self.OFFSET_STEPPER_1, self.OFFSET_STEPPER_2, stepper_COM_port)
         self.motor_3 = Servo_Motor(3, self.OFFSET_SERVO3, "st3215", self.port_handler)
         self.motor_4 = Servo_Motor(4, self.OFFSET_SERVO4, "sc09", self.port_handler)
-        self.motor_5 = Servo_Motor(5, self.OFFSET_SERVO5, "sc09", self.port_handler)
+        self.motor_5 = ServoGripper(
+                                    id=5,
+                                    port_handler=self.port_handler,
+                                    open_raw_1=897,
+                                    open_raw_2=800,
+                                    close_raw_1=523,
+                                    close_raw_2=794,
+                                    offset=0,
+                                    model="sc09",
+                                )
 
         self.path = []
         self.stepper_controller.home(2)
@@ -225,8 +234,8 @@ class Robot:
             #if not self.check_workspace(index, pos, elbow_right=True):
             #    return False
 
-        print(f"Current positions: theta1={theta1_ist}, z={z_ist}, theta2={theta2_ist}, theta3={theta3_ist}")
-        print(f"Target positions: theta1={theta1_soll}, z={z_soll}, theta2={theta2_soll}, theta3={theta3_soll}")
+       #print(f"Current positions: theta1={theta1_ist}, z={z_ist}, theta2={theta2_ist}, theta3={theta3_ist}")
+       #print(f"Target positions: theta1={theta1_soll}, z={z_soll}, theta2={theta2_soll}, theta3={theta3_soll}")
 
         theta1_time = abs(theta1_soll - theta1_ist) / self.SPEED_AXIS_1
         
@@ -278,7 +287,7 @@ class Robot:
                 start_position = start_position[:-1]  # remove speed factor from start position
 
 
-        print(f"Starting linear move from {start_position} to {target_position} with step size {step_size} and speed factor {speed_factor}")
+       #print(f"Starting linear move from {start_position} to {target_position} with step size {step_size} and speed factor {speed_factor}")
         distance = np.linalg.norm(np.array(target_position) - np.array(start_position))
         if distance < step_size:
                 target = [target_position, speed_factor]
@@ -287,10 +296,10 @@ class Robot:
         else:
             step_count = distance / step_size
             direction = (np.array(target_position) - np.array(start_position)) / step_count
-            print(f"Calculated {step_count} steps for linear move, direction: {direction}")
+           #print(f"Calculated {step_count} steps for linear move, direction: {direction}")
             for i in range(1, int(np.floor(step_count)) + 1):
                 intermediate_position = start_position + direction * i
-                print(f"i: {i}, intermediate_position: {intermediate_position} Start: {start_position}, Target: {target_position}")
+               #print(f"i: {i}, intermediate_position: {intermediate_position} Start: {start_position}, Target: {target_position}")
                 target = np.append(intermediate_position, speed_factor)
                 #if not self.check_workspace(intermediate_position, elbow_right=True):
                 #    return False
@@ -318,21 +327,18 @@ class Robot:
             target_position = self.path[0]
             speed_factor = target_position[-1]
             target_position = target_position[:-1]
-            print(f"Target Pos: {target_position}")
+           #print(f"Target Pos: {target_position}")
 
             current_position = self.get_tcp_position()
             distance = np.linalg.norm(np.array(target_position) - np.array(current_position))
 
             #debug msg
-            print(f"Current TCP position: {current_position}, Target TCP position: {target_position}, Distance: {distance}")
-
+            #print(f"Current TCP position: {current_position}, Target TCP position: {target_position}, Distance: {distance}")
             theta3_diff = abs(target_position[3] - current_position[3])
-
-            
 
             if (distance < tolerance and theta3_diff < np.deg2rad(10)):  # If within tolerance, pop the target and move to the next one
                 self.set_tcp_position(target_position, speed_factor=speed_factor) #vllt falsch
-                print(f"Reached target position: {target_position}")
+                #print(f"Reached target position: {target_position}")
                 self.path.pop(0)
                 if not self.path:
                     print("No more targets in path")
@@ -340,11 +346,10 @@ class Robot:
                     self.move()
             else:
                 self.set_tcp_position(target_position, speed_factor=speed_factor)
-                print(f"Moving towards target position: {target_position}, current position: {current_position}")
+               #print(f"Moving towards target position: {target_position}, current position: {current_position}")
                 self.move() # Continue moving towards the target position
 
-    
-    
+
     def move_gripper(self, distance=0, tolerance=5):
         self.motor_5.set_position(distance)
         current_distance = self.motor_5.get_position()
