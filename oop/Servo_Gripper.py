@@ -1,6 +1,7 @@
-from Servo import Servo_Motor
+from oop.Servo import Servo_Motor
 from STservo_sdk import *
 import time
+
 
  
 DEFAULT_SPEED         = 300    # Standard-Fahrgeschwindigkeit

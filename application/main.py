@@ -1,9 +1,9 @@
 import sys
 from pathlib import Path
-from time import time
+import time
 import numpy as np
 
-sys.path.append(str(Path(__file__).resolve().parent.parent / "oop"))
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from oop.Robot import Robot
 
@@ -12,31 +12,34 @@ from yaml_parser import parse
 
 def run(program_file: str):
     steps = parse(program_file)
+    #print(f"steps {steps} steps from {program_file}")
     robot = Robot()
 
     try:
         for step in steps:
             match step.type:
                 case "moveJ":
-                    print(f"Moving to {step.pos} with moveJ")
-                    step.pos[3] = step.pos[3] / 180 * np.pi  # Convert degrees to radians
-                    robot.move_j(step.pos)
+                    pos = np.array(step.pos, dtype=float)
+                    print(f"Moving to {pos} with moveJ")
+                    pos[3] = pos[3] / 180 * np.pi  # Convert degrees to radians
+                    robot.move_j(pos)
                 case "moveL":
-                    print(f"Moving to {step.pos} with moveL")
-                    step.pos[3] = step.pos[3] / 180 * np.pi  # Convert degrees to radians
-                    robot.move_l(step.pos)
+                    pos = np.array(step.pos, dtype=float)
+                    print(f"Moving to {pos} with moveL")
+                    pos[3] = pos[3] / 180 * np.pi  # Convert degrees to radians
+                    robot.move_l(pos)
                 case "gripper":
                     print(f"Setting gripper position to {step.pos}")
                     match step.pos:
                         case "open":
-                            robot.move_gripper(distance=40)
+                            robot.set_gripper(distance=40)
                         case "grip":
-                            robot.move_gripper(distance=30)
+                            robot.set_gripper(distance=30)
                         case "closed":
-                            robot.move_gripper(distance=0)
+                            robot.set_gripper(distance=0)
                         case _:
                             if isinstance(step.pos, (int, float)) and 0 <= step.pos <= 40:
-                                robot.move_gripper(distance=step.pos)
+                                robot.set_gripper(distance=step.pos)
                             else:
                                 print(f"Unknown gripper position: {step.pos}")
                 case "wait":
@@ -44,6 +47,8 @@ def run(program_file: str):
                     time.sleep(step.delay / 1000)
                 case _:
                     print(f"Unknown step type: {step.type}")
+    except KeyboardInterrupt:
+        print("Program interrupted by user, shutting down...")
     finally:
         robot.shutdown()
         pass
@@ -51,5 +56,5 @@ def run(program_file: str):
 
 if __name__ == "__main__":
     program = sys.argv[1] if len(sys.argv) > 1 else \
-        str(Path(__file__).parent / "example_program.yaml")
+        str(Path(__file__).parent / "cad_program.yaml")
     run(program)

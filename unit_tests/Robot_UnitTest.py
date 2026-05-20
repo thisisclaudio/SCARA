@@ -20,8 +20,8 @@ if __name__ == "__main__":
     #result  = robot.move_j([190, 0, 10, 1.57], speed_factor=1.0)
     '''
     result  = robot.move_j([190, -40, 50, 0], speed_factor=1.0)
-    result = robot.move_l([190, 40, 50, 0], speed_factor=0.5)
-    result  = robot.move_j([190, -40, 70, 0], speed_factor=1.0)
+    result = robot.move_l([190, -40, 0, 0], speed_factor=0.1)
+    #result  = robot.move_j([190, -40, 70, 0], speed_factor=1.0)
 
     if not result:
         print()

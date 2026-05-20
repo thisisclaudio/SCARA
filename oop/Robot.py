@@ -15,10 +15,10 @@ from STservo_sdk import *
 class Robot:
     # Constants for kinematics
     OFFSET_STEPPER_1 = 1425
-    OFFSET_STEPPER_2 = 60000
+    OFFSET_STEPPER_2 = 60000 - (5/8*3200)
     OFFSET_SERVO3 = 330
     OFFSET_SERVO4 = 10
-    OFFSET_SERVO5 = -241
+    #OFFSET_SERVO5 = -241
     
     OFFSET_AXIS_01 = 155
     LENGTH_AXIS_23 = 125
@@ -27,7 +27,7 @@ class Robot:
     OFFSET_GRIPPER = -125
     
     MIN_RADIUS = 75
-    MIN_Z = 0
+    MIN_Z = 10
     MAX_Z = 145
     MIN_THETA = 0
     MAX_THETA = np.pi
@@ -346,14 +346,19 @@ class Robot:
                     self.move()
             else:
                 self.set_tcp_position(target_position, speed_factor=speed_factor)
-               #print(f"Moving towards target position: {target_position}, current position: {current_position}")
+                print(f"Moving towards target position: {target_position}, current position: {current_position}")
                 self.move() # Continue moving towards the target position
 
 
     def move_gripper(self, distance=0, tolerance=5):
-        self.motor_5.set_position(distance)
         current_distance = self.motor_5.get_position()
+        print (f"Current gripper distance: {current_distance}, Target distance: {distance}")
         if abs(current_distance - distance) < tolerance:
             return True
         else:
             self.move_gripper(distance)
+
+
+    def set_gripper(self, distance=0):
+        self.motor_5.set_position(distance)
+        self.move_gripper(distance)
