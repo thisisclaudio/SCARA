@@ -13,10 +13,10 @@ from STservo_sdk import *
     
 class Robot:
     # Constants for kinematics
-    OFFSET_STEPPER_1 = 1400
+    OFFSET_STEPPER_1 = 1425
     OFFSET_STEPPER_2 = 60000
-    OFFSET_SERVO3 = 323
-    OFFSET_SERVO4 = -2
+    OFFSET_SERVO3 = 330
+    OFFSET_SERVO4 = 10
     OFFSET_SERVO5 = -241
     
     OFFSET_AXIS_01 = 155
@@ -167,16 +167,16 @@ class Robot:
         #print(f"Setting TCP position to: x={x}, y={y}, z={z}, theta={theta}")
         #print(f"Calculated joint angles: theta1={theta1}, z={z}, theta2={theta2}, theta3={theta3}")
 
-        for index, pos in enumerate(soll_pos):
-            if not self.check_workspace(index, pos, elbow_right=True):
-                return False
+        #for index, pos in enumerate(soll_pos):
+        #    if not self.check_workspace(index, pos, elbow_right=True):
+        #        return False
         
         self.move_sync(soll_pos, speed_factor=speed_factor)
         return True
     
     
     def check_workspace(self, index, pos, elbow_right=True):
-        print("Skipping workspace check")
+        #print("Skipping workspace check")
         return True
 
         match index:
@@ -202,12 +202,12 @@ class Robot:
         theta1_ist, z_ist, theta2_ist, theta3_ist = self.get_motor_positions()
         theta1_soll, z_soll, theta2_soll, theta3_soll = soll_pos
 
-        for index, pos in enumerate(soll_pos):
-            if not self.check_workspace(index, pos, elbow_right=True):
-                return False
+        #for index, pos in enumerate(soll_pos):
+            #if not self.check_workspace(index, pos, elbow_right=True):
+            #    return False
 
-        #print(f"Current positions: theta1={theta1_ist}, z={z_ist}, theta2={theta2_ist}, theta3={theta3_ist}")
-        #print(f"Target positions: theta1={theta1_soll}, z={z_soll}, theta2={theta2_soll}, theta3={theta3_soll}")
+        print(f"Current positions: theta1={theta1_ist}, z={z_ist}, theta2={theta2_ist}, theta3={theta3_ist}")
+        print(f"Target positions: theta1={theta1_soll}, z={z_soll}, theta2={theta2_soll}, theta3={theta3_soll}")
 
         theta1_time = abs(theta1_soll - theta1_ist) / self.SPEED_AXIS_1
         
@@ -246,43 +246,51 @@ class Robot:
         #print(f"\rTCP position: x={x:<6} | y={y:<6} | z={z:<6} | theta={theta:<6}", end="", flush=True)
 
     
-    def move_l(self, target_position, start_position=None, step_size=10, speed_factor=1.0):
-        for index, pos in enumerate(target_position):
-            if not self.check_workspace(index, pos, elbow_right=True):
-                return False
-        
+    def move_l(self, target_position, start_position=None, step_size=2, speed_factor=1.0):
+        #for index, pos in enumerate(target_position):
+        #    if not self.check_workspace(index, pos, elbow_right=True):
+        #        return False
+
         if not start_position:
             if not self.path:
                 start_position = self.get_tcp_position()
             else:
                 start_position = self.path[-1]
-        
+                start_position = start_position[:-1]  # remove speed factor from start position
+
+
+        print(f"Starting linear move from {start_position} to {target_position} with step size {step_size} and speed factor {speed_factor}")
         distance = np.linalg.norm(np.array(target_position) - np.array(start_position))
         if distance < step_size:
-                self.path.append(target_position, speed_factor=speed_factor)
+                target = [target_position, speed_factor]
+                self.path.append(target)
                 return True
         else:
             step_count = distance / step_size
             direction = (np.array(target_position) - np.array(start_position)) / step_count
+            print(f"Calculated {step_count} steps for linear move, direction: {direction}")
             for i in range(1, int(np.floor(step_count)) + 1):
                 intermediate_position = start_position + direction * i
-                self.path.append((start_position + direction * i).tolist(), speed_factor=speed_factor)
-                if not self.check_workspace(intermediate_position, elbow_right=True):
-                    return False
-            self.path.append(target_position, speed_factor=speed_factor)
+                print(f"i: {i}, intermediate_position: {intermediate_position} Start: {start_position}, Target: {target_position}")
+                target = np.append(intermediate_position, speed_factor)
+                #if not self.check_workspace(intermediate_position, elbow_right=True):
+                #    return False
+                self.path.append(target)
+            target = np.append(intermediate_position, speed_factor)
+            self.path.append(target)
 
-        #self.move()
+        self.move()
         return True
         
         
     def move_j(self, target_position, speed_factor=1.0):
-        for index, pos in enumerate(target_position):
-            if not self.check_workspace(index, pos, elbow_right=True):
-                return False
+        #for index, pos in enumerate(target_position):
+            #if not self.check_workspace(index, pos, elbow_right=True):
+            #    return False
 
         target = [target_position[0], target_position[1], target_position[2], target_position[3], speed_factor]
         self.path.append(target)
-        #self.move()
+        self.move()
         return True
     
     
@@ -291,16 +299,28 @@ class Robot:
             target_position = self.path[0]
             speed_factor = target_position[-1]
             target_position = target_position[:-1]
+            print(f"Target Pos: {target_position}")
 
             current_position = self.get_tcp_position()
             distance = np.linalg.norm(np.array(target_position) - np.array(current_position))
-            
-            #debug msg
-            #print(f"Current TCP position: {current_position}, Target TCP position: {target_position}, Distance: {distance}")
 
-            if distance < tolerance:
+            #debug msg
+            print(f"Current TCP position: {current_position}, Target TCP position: {target_position}, Distance: {distance}")
+
+            theta3_diff = abs(target_position[3] - current_position[3])
+
+            
+
+            if (distance < tolerance and theta3_diff < np.deg2rad(10)):  # If within tolerance, pop the target and move to the next one
+                self.set_tcp_position(target_position, speed_factor=speed_factor) #vllt falsch
                 print(f"Reached target position: {target_position}")
                 self.path.pop(0)
+                if not self.path:
+                    print("No more targets in path")
+                else:
+                    self.move()
             else:
                 self.set_tcp_position(target_position, speed_factor=speed_factor)
-                #print(f"Moving towards target position: {target_position}, current position: {current_position}")
+                print(f"Moving towards target position: {target_position}, current position: {current_position}")
+                self.move() # Continue moving towards the target position
+

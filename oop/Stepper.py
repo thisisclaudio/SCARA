@@ -122,10 +122,13 @@ class SerialManager:
 
     def close_serial(self):
         if self.serial is not None:
+            self.serial_running = False
+            self.thread.join(timeout=1)
             self.serial.close()
             #print("Serial port closed.")
             self.serial = None
-            self.serial_running = False
+
+            
         else:
             print("Serial port is not open.") 
 

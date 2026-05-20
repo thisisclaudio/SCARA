@@ -20,7 +20,7 @@ def check_ids(id1, id2):
 
 
 id_old = 1
-id_new = 3
+id_new = 4
 
 # Validate the IDs
 if check_ids(id_old, id_new):
@@ -31,7 +31,7 @@ else:
 
 load_dotenv()
 
-com_port_motor = "COM10"
+com_port_motor = "/dev/cu.usbmodem5AE60571561"
 portHandler = PortHandler(com_port_motor)
 packetHandler = sts(portHandler)
     

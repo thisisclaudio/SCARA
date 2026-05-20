@@ -10,20 +10,24 @@ if __name__ == "__main__":
     robot = Robot()
     print("Robot initialized successfully")
 
-    result  = robot.move_j([200, 50, 50, 0], speed_factor=1.0)
-    result  = robot.move_j([200, 50, 100, 1.57], speed_factor=0.5)
+    '''
+    result  = robot.move_j([190, 0, 10, 0], speed_factor=1.0)
+    result  = robot.move_j([190, 0, 10, 1.57], speed_factor=1.0)
+    result  = robot.move_j([190, 40, 10, 0], speed_factor=1.0)
+    result  = robot.move_j([190, 40, 10, 1.57], speed_factor=1.0)
+    result  = robot.move_j([190, -40, 10, 0], speed_factor=1.0)
+    result  = robot.move_j([190, -40, 10, 1.57], speed_factor=1.0)
+    #result  = robot.move_j([190, 0, 10, 1.57], speed_factor=1.0)
+    '''
+    result  = robot.move_j([190, -40, 50, 0], speed_factor=1.0)
+    result = robot.move_l([190, 40, 50, 0], speed_factor=0.5)
+    result  = robot.move_j([190, -40, 70, 0], speed_factor=1.0)
 
     if not result:
         print()
         print("Failed to set TCP position. TCP position may be out of reach.")
         stop_requested = True
 
-    try:
-        while True:
-            robot.move()
-            robot.print_tcp_position()
-            robot.print_motor_positions(raw=True)
 
-    except KeyboardInterrupt:
-        print("Abbruch durch Ctrl+C")
-        robot.shutdown()
+    print("Done!")
+    robot.shutdown()
