@@ -1,5 +1,6 @@
 from re import match
 from oop.Servo import Servo_Motor
+from oop.Servo_Gripper import ServoGripper
 from oop.Stepper import StepperController
 import sys
 import os
@@ -54,7 +55,16 @@ class Robot:
         self.stepper_controller = StepperController(self.OFFSET_STEPPER_1, self.OFFSET_STEPPER_2, stepper_COM_port)
         self.motor_3 = Servo_Motor(3, self.OFFSET_SERVO3, "st3215", self.port_handler)
         self.motor_4 = Servo_Motor(4, self.OFFSET_SERVO4, "sc09", self.port_handler)
-        self.motor_5 = Servo_Motor(5, self.OFFSET_SERVO5, "sc09", self.port_handler)
+        self.motor_5 = ServoGripper(
+                                    id=5,
+                                    port_handler=self.port_handler,
+                                    open_raw_1=897,
+                                    open_raw_2=800,
+                                    close_raw_1=523,
+                                    close_raw_2=794,
+                                    offset=0,
+                                    model="sc09",
+                                )
 
         self.path = []
         self.stepper_controller.home(2)
@@ -268,8 +278,8 @@ class Robot:
         
         distance = np.linalg.norm(np.array(target_position) - np.array(start_position))
         if distance < step_size:
-                self.path.append(target_position)
-                return True
+            self.path.append(target_position)
+            return True
         else:
             step_count = distance / step_size
             direction = (np.array(target_position) - np.array(start_position)) / step_count
@@ -302,3 +312,12 @@ class Robot:
                 self.path.pop(0)
             else:
                 self.set_tcp_position(target_position)
+    
+    
+    def move_gripper(self, distance=0, tolerance=5):
+        self.motor_5.set_position(distance)
+        current_distance = self.motor_5.get_position()
+        if abs(current_distance - distance) < tolerance:
+            return True
+        else:
+            self.move_gripper(distance)

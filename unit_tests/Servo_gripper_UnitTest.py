@@ -1,6 +1,6 @@
 import os, sys, time
 sys.path.insert(0, "..")
-from Servo_Gripper import ServoGripper
+from oop.Servo_Gripper import ServoGripper
 from STservo_sdk import PortHandler
 from dotenv import load_dotenv
 
