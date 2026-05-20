@@ -65,7 +65,7 @@ class StepperController:
 
     def set_position_raw(self, motor_id, position, speed=200):
         #debug msg
-        print(f"Setting motor {motor_id} to raw position {position} with speed {speed}")
+        #print(f"Setting motor {motor_id} to raw position {position} with speed {speed}")
         self.serial.send({"id": motor_id, "cmd": "move_to", "pos": position, "speed": speed})
         status = self.serial.get_latest_data()
         while status is None:
@@ -122,10 +122,13 @@ class SerialManager:
 
     def close_serial(self):
         if self.serial is not None:
+            self.serial_running = False
+            self.thread.join(timeout=1)
             self.serial.close()
             #print("Serial port closed.")
             self.serial = None
-            self.serial_running = False
+
+            
         else:
             print("Serial port is not open.") 
 

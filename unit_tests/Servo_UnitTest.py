@@ -3,8 +3,8 @@ Manual test script for StepperController on COM7.
 Run from the same folder as stepper_controller.py.
 """
 
-OFFSET_SERVO3 = 323
-OFFSET_SERVO4 = -2
+OFFSET_SERVO3 = 340
+OFFSET_SERVO4 = 10
 OFFSET_SERVO5 = -241
 
 import numpy as np
@@ -25,23 +25,22 @@ COM_PORT_SERVO = os.getenv("COM_PORT_SERVO")
 print(f"Using COM port for servo: {COM_PORT_SERVO}")
 
 port_handler = PortHandler(COM_PORT_SERVO)
-servo3 = Servo_Motor(id=3, offset=OFFSET_SERVO3, model="st3215", port_handler=port_handler)
+
+#servo3 = Servo_Motor(id=3, offset=OFFSET_SERVO3, model="st3215", port_handler=port_handler)
 servo4 = Servo_Motor(id=4, offset=OFFSET_SERVO4, model="sc09", port_handler=port_handler)
-servo5 = Servo_Motor(id=5, offset=OFFSET_SERVO5, model="sc09", port_handler=port_handler)
-pos4 = servo4.get_position_raw()  # initialize position
+#servo5 = Servo_Motor(id=5, offset=OFFSET_SERVO5, model="sc09", port_handler=port_handler)
+#pos4 = servo4.get_position_raw()  # initialize position
 
 if True:
-    servo4.set_position(0, speed=500) #802
+    #servo4.set_position(0, speed=500) #802
+    #servo4.set_position_ultra_raw(715-307, speed=800)
     time.sleep(3)
-
-    for i in range(10):
-        servo4.set_position(-np.pi/2 + np.pi/9*i, speed=500)
-        time.sleep(3)
+    servo4.set_position(0, speed=500) #802
 
 while True:
     pos4 =servo4.get_position()
     print(f"Position: {pos4:.2f}")
-    pos4 =servo4.get_position_raw()
-    print(f"Position raw: {pos4:.2f}")
-    time.sleep(1)
+    #pos4 =servo4.get_position_raw()
+    #print(f"Position raw: {pos4:.2f}")
+    time.sleep(0.1)
 

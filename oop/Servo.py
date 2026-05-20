@@ -29,9 +29,22 @@ class Servo_Motor:
 
 
     def shutdown(self):
-        self.packet_handler.change_hold(self.id, 0)
+        if self.model == "sc09":
+            #TODO: Implement proper shutdown for SC09
+            print("Warning: Proper shutdown not implemented for SC09")
+        else:    
+            self.packet_handler.change_hold(self.id, 0)
+        
         print(f"Motor {self.id} shutdown")
 
+    def get_position_ultra_raw(self):
+        if self.model == "sc09": 
+            position, comm_result, error = self.packet_handler.ReadPos(self.id)
+            return position 
+        
+        else:
+            position, _, _, _ = self.packet_handler.ReadPosSpeed(self.id)
+            return position
 
     def get_position_raw(self):        
         if self.model == "sc09": 
@@ -76,9 +89,17 @@ class Servo_Motor:
     def get_speed(self):
         _, speed, _, _ = self.packet_handler.ReadPosSpeed(self.id)
         return speed
-    
+
+    def set_position_ultra_raw(self, position, speed=200):
+        if self.model == "sc09":
+            print(f"Setting position of servo {self.id} to raw value {position} with speed {speed}")
+            self.packet_handler.WritePos(self.id, int(position), 0, int(speed))
+        else:
+            self.packet_handler.WritePosEx(self.id, int(position), int(speed), 0)    
 
     def set_position_raw(self, position, speed=200):
+        #debug print
+        #print(f"Setting motor {self.id} model {self.model} to position {position} with speed {speed}")
         if self.model == "sc09":
             position = position - self.offset - 512
             if position > 1024:
@@ -98,7 +119,8 @@ class Servo_Motor:
     def set_position(self, position, speed=200):
         if self.model == "sc09":
             #position_raw = int(position * 1024 / (2 * np.pi) + 1024)
-            position_raw = int(position * (3.15 * 180 / np.pi))
+            position_raw = int(position * (3.51 * 180 / np.pi))
+            print(f"Setting position of servo {self.id} to {position:.2f} rad (raw: {position_raw}) with speed {speed}")
             speed = int(speed / (2 * np.pi) * (1024 * 5 / 6))  # Convert rad/s to raw speed
         else:
             position_raw = int(position / (2 * np.pi) * 4096)
