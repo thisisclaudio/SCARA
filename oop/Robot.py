@@ -18,7 +18,6 @@ class Robot:
     OFFSET_STEPPER_2 = 60000
     OFFSET_SERVO3 = 323
     OFFSET_SERVO4 = -2
-    OFFSET_SERVO5 = -241
     
     OFFSET_AXIS_01 = 155
     LENGTH_AXIS_23 = 125
@@ -27,10 +26,10 @@ class Robot:
     OFFSET_GRIPPER = -125
     
     MIN_RADIUS = 75
-    MIN_AXIS_2 = 0
-    MAX_AXIS_2 = 145
-    MIN_AXIS_4 = -np.pi/2
-    MAX_AXIS_4 = np.pi/2
+    MIN_Z = 0
+    MAX_Z = 145
+    MIN_THETA = 0
+    MAX_THETA = np.pi
 
     SPEED_AXIS_1 = 1000/3200*2*np.pi        # rad/s
     SPEED_AXIS_2 = 18000/3200*8             # mm/s
@@ -179,15 +178,15 @@ class Robot:
         r = r1 + r2
         
         # Check z limits
-        if z < self.MIN_AXIS_2:
+        if z < self.MIN_Z:
             return False
-        elif z > self.MAX_AXIS_2:
+        elif z > self.MAX_Z:
             return False
         
         # Check theta limits
-        if theta < self.MIN_AXIS_4:
+        if theta < self.MIN_THETA:
             return False
-        elif theta > self.MAX_AXIS_4:
+        elif theta > self.MAX_THETA:
             return False
 
         # Check x, y limits based on elbow configuration
