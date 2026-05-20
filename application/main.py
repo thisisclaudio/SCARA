@@ -18,11 +18,9 @@ def run(program_file: str):
                 case "moveJ":
                     print(f"Moving to {step.pos} with moveJ")
                     robot.move_j(step.pos)
-                    robot.move()
                 case "moveL":
                     print(f"Moving to {step.pos} with moveL")
                     robot.move_l(step.pos)
-                    robot.move()
                 case "gripperSetPos":
                     print(f"Setting gripper position to {step.pos}")
                     # TODO: gripper integration

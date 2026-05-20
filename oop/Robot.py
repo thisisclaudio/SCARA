@@ -25,12 +25,9 @@ class Robot:
     OFFSET_AXIS_34 = -30
     OFFSET_GRIPPER = -125
     
-    MIN_AXIS_1 = -np.pi/2
-    MAX_AXIS_1 = np.pi/2
+    MIN_RADIUS = 75
     MIN_AXIS_2 = 0
     MAX_AXIS_2 = 145
-    MIN_AXIS_3 = -np.pi/2
-    MAX_AXIS_3 = np.pi/2
     MIN_AXIS_4 = -np.pi/2
     MAX_AXIS_4 = np.pi/2
 
@@ -165,24 +162,49 @@ class Robot:
         return True
     
     
-    def check_workspace(self, index, pos, elbow_right=True):
-        match index:
-            case 0:
-                if pos < self.MIN_AXIS_1 or pos > self.MAX_AXIS_1:
-                    return False
+    def check_workspace(self, tcp_position, elbow_right=True):
+        x, y, z, theta = tcp_position
+        r1 = self.LENGTH_AXIS_23
+        r2 = self.LENGTH_AXIS_34
+        r = r1 + r2
+        
+        # Check z limits
+        if z < self.MIN_AXIS_2:
+            return False
+        elif z > self.MAX_AXIS_2:
+            return False
+        
+        # Check theta limits
+        if theta < self.MIN_AXIS_4:
+            return False
+        elif theta > self.MAX_AXIS_4:
+            return False
+
+        # Check x, y limits based on elbow configuration
+        if elbow_right:
+            if x ** 2 + (y + r1) ** 2 < r ** 2:
+                return False
+            if x ** 2 + (y - r1) ** 2 <= r ** 2:
                 return True
-            case 1:
-                if pos < self.MIN_AXIS_2 or pos > self.MAX_AXIS_2:            
-                    return False
+            if x < 0:
+                return False
+            if x ** 2 + y ** 2 > self.MIN_RADIUS ** 2:
+                return False
+            if x ** 2 + y ** 2 <= r ** 2:
                 return True
-            case 2:
-                if pos < self.MIN_AXIS_3 or pos > self.MAX_AXIS_3:
-                    return False
+            return False
+        else:
+            """
+            if (x + r1) ** 2 + y ** 2 <= r ** 2:
                 return True
-            case 3:
-                if pos < self.MIN_AXIS_4 or pos > self.MAX_AXIS_4:
-                    return False
+            if (x - r1) ** 2 + y ** 2 < r ** 2:
+                return False
+            if y < 0:
+                return False
+            if x ** 2 + y ** 2 <= (2 * r) ** 2:
                 return True
+            """
+            return False
     
     
     def move_sync(self, soll_pos, speed_factor=1):
