@@ -336,7 +336,7 @@ class Robot:
             #print(f"Current TCP position: {current_position}, Target TCP position: {target_position}, Distance: {distance}")
             theta3_diff = abs(target_position[3] - current_position[3])
 
-            if (distance < tolerance and theta3_diff < np.deg2rad(10)):  # If within tolerance, pop the target and move to the next one
+            if (distance < tolerance and theta3_diff < np.deg2rad(30)):  # If within tolerance, pop the target and move to the next one
                 self.set_tcp_position(target_position, speed_factor=speed_factor) #vllt falsch
                 #print(f"Reached target position: {target_position}")
                 self.path.pop(0)

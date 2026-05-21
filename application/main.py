@@ -34,7 +34,7 @@ def run(program_file: str):
                         case "open":
                             robot.set_gripper(distance=40)
                         case "grip":
-                            robot.set_gripper(distance=30)
+                            robot.set_gripper(distance=25)
                         case "closed":
                             robot.set_gripper(distance=0)
                         case _:
@@ -56,5 +56,5 @@ def run(program_file: str):
 
 if __name__ == "__main__":
     program = sys.argv[1] if len(sys.argv) > 1 else \
-        str(Path(__file__).parent / "cad_program.yaml")
+        str(Path(__file__).parent / "Runde2.yaml")
     run(program)

@@ -13,14 +13,14 @@ program:
   - type: gripper
     pos: open
   
-  - type: moveL
+  - type: moveJ
     pos: [145, 35, 34, 0]
     speed: 0.5
 
   - type: gripper
     pos: closed
 
-  - type: moveL
+  - type: moveJ
     pos: [145, 35, 100, 0]
     speed: 1
 
@@ -30,14 +30,14 @@ program:
     pos: [25, 105, 100, 180]
     speed: 1
 
-  - type: moveL
+  - type: moveJ
     pos: [25, 105, 34.5, 180]
     speed: 1
 
   - type: gripper
     pos: open
 
-  - type: moveL
+  - type: moveJ
     pos: [25, 105, 100, 180]
     speed: 1
 
@@ -50,14 +50,14 @@ program:
   - type: gripper
     pos: open
 
-  - type: moveL
+  - type: moveJ
     pos: [145, -5, 34, 0]
     speed: 1
 
   - type: gripper
     pos: closed
 
-  - type: moveL
+  - type: moveJ
     pos: [145, -5, 100, 0]
     speed: 1
 
@@ -85,14 +85,14 @@ program:
     pos: [190, 40, 70, 0]
     speed: 1
   
-  - type: moveL
-    pos: [190, 40, 10.5, 0]
+  - type: moveJ
+    pos: [190, 40, 5, 0]
     speed: 1
 
   - type: gripper
     pos: grip
 
-  - type: moveL
+  - type: moveJ
     pos: [190, 40, 70, 0]
     speed: 1
 
@@ -101,7 +101,7 @@ program:
     pos: [124, 193, 130, 180]
     speed: 1
 
-  - type: moveL
+  - type: moveJ
     pos: [124, 193, 95, 180]
     speed: 1
 
@@ -113,15 +113,15 @@ program:
     pos: [124, 108, 95, 180]
     speed: 1
 
-  - type: moveL
-    pos: [124, 108, 15, 180]
+  - type: moveJ
+    pos: [124, 108, 10, 180]
     speed: 1
 
   - type: gripper
     pos: grip
 
-  - type: moveL
-    pos: [124, 108, 95, 180]
+  - type: moveJ
+    pos: [124, 108, 140, 180]
     speed: 1
 
   # Würfelablage 1
@@ -129,14 +129,14 @@ program:
     pos: [-32.54, 185.41, 130, 180]
     speed: 1
 
-  - type: moveL
+  - type: moveJ
     pos: [-32.54, 185.41, 15.96, 180]
     speed: 1
 
   - type: gripper
     pos: open
 
-  - type: moveL
+  - type: moveJ
     pos: [-32.54, 185.41, 130, 180]
     speed: 1
 
@@ -147,14 +147,14 @@ program:
     pos: [190, 0, 70, 0]
     speed: 1
 
-  - type: moveL
+  - type: moveJ
     pos: [190, 0, 10.5, 0]
     speed: 1
 
   - type: gripper
     pos: grip
 
-  - type: moveL
+  - type: moveJ
     pos: [190, 0, 70, 0]
     speed: 1
 
@@ -163,7 +163,7 @@ program:
     pos: [124, 193, 130, 90]
     speed: 1
 
-  - type: moveL
+  - type: moveJ
     pos: [124, 193, 95, 90]
     speed: 1
 
@@ -175,14 +175,14 @@ program:
     pos: [124, 108, 95, 180]
     speed: 1
 
-  - type: moveL
+  - type: moveJ
     pos: [124, 108, 15, 180]
     speed: 1
 
   - type: gripper
     pos: grip
 
-  - type: moveL
+  - type: moveJ
     pos: [124, 108, 95, 180]
     speed: 1
 
@@ -191,14 +191,14 @@ program:
     pos: [-32.54, 149.54, 130, 180]
     speed: 1
 
-  - type: moveL
+  - type: moveJ
     pos: [-32.54, 149.54, 15.96, 180]
     speed: 1
 
   - type: gripper
     pos: open
 
-  - type: moveL
+  - type: moveJ
     pos: [-32.54, 185.41, 130, 180]
     speed: 1
 
@@ -209,14 +209,14 @@ program:
     pos: [190, -40, 70, 0]
     speed: 1
 
-  - type: moveL
+  - type: moveJ
     pos: [190, -40, 10.5, 0]
     speed: 1
 
   - type: gripper
     pos: grip
 
-  - type: moveL
+  - type: moveJ
     pos: [190, -40, 70, 0]
     speed: 1
 
@@ -225,7 +225,7 @@ program:
     pos: [124, 193, 130, 180]
     speed: 1
 
-  - type: moveL
+  - type: moveJ
     pos: [124, 193, 95, 180]
     speed: 1
 
@@ -237,14 +237,14 @@ program:
     pos: [124, 108, 95, 180]
     speed: 1
 
-  - type: moveL
+  - type: moveJ
     pos: [124, 108, 15, 180]
     speed: 1
 
   - type: gripper
     pos: grip
 
-  - type: moveL
+  - type: moveJ
     pos: [124, 108, 130, 180]
     speed: 1
 
@@ -253,7 +253,7 @@ program:
     pos: [124, 193, 130, 180]
     speed: 1
 
-  - type: moveL
+  - type: moveJ
     pos: [124, 193, 95, 180]
     speed: 1
 
@@ -265,30 +265,30 @@ program:
     pos: [124, 108, 95, 180]
     speed: 1
 
-  - type: moveL
+  - type: moveJ
     pos: [124, 108, 15, 180]
     speed: 1
 
   - type: gripper
     pos: grip
 
-  - type: moveL
+  - type: moveJ
     pos: [124, 108, 95, 180]
     speed: 1
 
   # Würfelablage 3
-  - type: moveL
+  - type: moveJ
     pos: [-32.54, 113.67, 130, 0]
     speed: 1
   
-  - type: moveL
+  - type: moveJ
     pos: [-32.54, 113.67, 15.96, 0]
     speed: 1
 
   - type: gripper
     pos: open
 
-  - type: moveL
+  - type: moveJ
     pos: [-32.54, 185.41, 130, 180]
     speed: 1
   

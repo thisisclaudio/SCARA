@@ -81,7 +81,7 @@ class Servo_Motor:
         position_raw = self.get_position_raw()
         if self.model == "sc09":
             #return position_raw * 2 * np.pi * 5 / 6 / 1024
-            return position_raw / (3.15 * 180 / np.pi) #Steigung 3.15 empirisch ermittelt, da die SC09 nicht genau 300° drehen
+            return position_raw / (3.4133333333 * 180 / np.pi) #Steigung 3.15 empirisch ermittelt, da die SC09 nicht genau 300° drehen
         else:
             return position_raw * 2 * np.pi / 4096
 

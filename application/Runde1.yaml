@@ -1,0 +1,47 @@
+program:
+  # START
+  - type: moveJ
+    pos: [200, 0, 100, 0]
+    speed: 1
+
+
+  # Zylinder Aufnahme 2
+  - type: moveJ
+    pos: [140, 29, 100, 0]
+    speed: 1
+
+  - type: gripper
+    pos: open
+  
+  - type: moveJ
+    pos: [140, 29, 34, 0]
+    speed: 0.5
+
+  - type: gripper
+    pos: closed
+
+  - type: moveJ
+    pos: [140, 29, 100, 0]
+    speed: 1
+
+
+  # Zylinder Ablage 3
+  - type: moveJ
+    pos: [25, 105, 100, 180]
+    speed: 1
+
+  - type: moveJ
+    pos: [25, 105, 34.5, 180]
+    speed: 1
+
+  - type: gripper
+    pos: open
+
+  - type: moveJ
+    pos: [25, 105, 100, 180]
+    speed: 1
+
+#ENDE
+  - type: moveJ
+    pos: [150, 0, 100, 0]
+    speed: 1

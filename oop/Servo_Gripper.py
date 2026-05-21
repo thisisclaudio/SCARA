@@ -4,7 +4,7 @@ import time
 
 
  
-DEFAULT_SPEED         = 300    # Standard-Fahrgeschwindigkeit
+DEFAULT_SPEED         = 500    # Standard-Fahrgeschwindigkeit
 # ── ServoGripper-Klasse ───────────────────────────────────────────────────────
  
 class ServoGripper(Servo_Motor):
