@@ -60,5 +60,4 @@ if __name__ == "__main__":
         app.mainloop()
     except KeyboardInterrupt:
         print("Abgebrochen.")
-    finally:
         robot.shutdown()

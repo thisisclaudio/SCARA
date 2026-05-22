@@ -1,0 +1,10 @@
+program:
+  # START
+  - type: moveJ
+    pos: [150, 0, 100, 0]
+    speed: 1
+
+  - type: gripper
+    pos: closed
+
+

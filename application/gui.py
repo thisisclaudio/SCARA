@@ -140,17 +140,35 @@ class ScaraApp(tk.Tk):
         btn_row.pack(fill="x", pady=(0, 10))
         self._run_btn = tk.Button(
             btn_row, text="▶  Starten", font=LG,
-            bg=ACCENT, fg="white", activebackground="#c73550",
-            activeforeground="white", relief="flat", bd=0,
+            bg=ACCENT, fg="black", activebackground="#c73550",
+            activeforeground="black", relief="flat", bd=0,
             padx=22, pady=10, cursor="hand2",
             state="disabled", command=self._start_program)
         self._run_btn.pack(side="left")
         self._stop_btn = tk.Button(
-            btn_row, text="■  Stop", font=("Helvetica", 12),
-            bg=SURFACE2, fg=DANGER, activebackground=BORDER,
-            activeforeground=DANGER, relief="flat", bd=0,
-            padx=22, pady=10, cursor="hand2",
-            state="disabled", command=self._stop_program)
+            btn_row,
+            text="■  Stop",
+            font=("Helvetica", 12, "bold"),
+
+            bg=DANGER,
+            fg="white",
+
+            activebackground="#d63c4a",
+            activeforeground="white",
+            highlightbackground=DANGER,
+
+            relief="flat",
+            bd=0,
+
+            padx=22,
+            pady=10,
+
+            cursor="hand2",
+            state="disabled",
+
+            command=self._stop_program
+        )
+        
         self._stop_btn.pack(side="left", padx=(10, 0))
 
         # ── Log
