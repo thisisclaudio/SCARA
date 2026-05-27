@@ -309,6 +309,72 @@ class Robot:
 
         self.move()
         return True
+    
+
+
+
+    def move_l1(self, P2, P1=None, r=20, speed_factor=1.0):
+        if P1 is None:
+            P1 = self.get_tcp_position()[:3]  # Aktuelle Position des TCP (x, y, z)
+        
+        theta = P2[3]
+        P2_2 = P2[:3]
+
+        Pi = self.get_tcp_position()[:3]  # Aktuelle Position des TCP (x, y, z)
+        d = P2_2 - P1          # Richtungsvektor der Geraden
+        w = P1 - Pi          # Versatzvektor
+
+        a = d @ d #qiadrat der Länge von d
+        b = 2.0 * (w @ d) #2 mal das Skalarprodukt von w und d
+        c = w @ w - r**2 #Skalarprodukt von w mit sich selbst minus das Quadrat des Lookahead-Radius
+
+        discriminant = b**2 - 4*a*c
+
+        sqrt_d = np.sqrt(discriminant)
+        t1 = (-b + sqrt_d) / (2*a) #Lösung der quadratischen Gleichung für t, erster Schnittpunkt
+        t2 = (-b - sqrt_d) / (2*a) #Lösung der quadratischen Gleichung für t, zweiter Schnittpunkt
+
+        ergebnisse = []
+        for t in (t1, t2):
+            L = P1 + t * d                          # Schnittpunkt
+            v = L - Pi                              # Vektor Pi -> L
+
+            alpha = np.arctan2(v[1], v[0])          # Azimut (xy-Ebene)
+            beta  = np.arcsin(np.clip(v[2] / r, -1.0, 1.0))  # Elevation
+
+            ergebnisse.append({
+                "t":     t,
+                "L":     L,
+                "alpha": alpha,
+                "beta":  beta,
+            })
+
+        in_range = [e for e in ergebnisse if 0.0 <= e["t"] <= 1.0] # Filtere Schnittpunkte, die auf der Strecke zwischen P1 und P2 liegen
+        if in_range:
+            best = min(in_range, key=lambda e: e["t"]) # Wähle den Schnittpunkt mit dem kleinsten t-Wert (nächster Schnittpunkt in Fahrtrichtung)
+        positiv = [e for e in ergebnisse if e["t"] > 0] # Wenn kein Schnittpunkt in der Strecke liegt, wähle den Schnittpunkt mit positivem t-Wert (in Fahrtrichtung, aber außerhalb der Strecke)
+        if positiv: # Wenn es positive t-Werte gibt, wähle den mit dem kleinsten t-Wert (nächster Schnittpunkt in Fahrtrichtung)
+            best =  min(positiv, key=lambda e: e["t"]) # Wenn es keine positiven t-Werte gibt, wähle den Schnittpunkt mit dem kleinsten absoluten t-Wert (nächster Schnittpunkt, auch wenn er hinter Pi liegt)
+        best = min(ergebnisse, key=lambda e: abs(e["t"])) # Wähle den Schnittpunkt mit dem kleinsten absoluten t-Wert (nächster Schnittpunkt, auch wenn er hinter Pi liegt)
+
+        Lv = Pi + r * np.array([
+            np.cos(best['beta']) * np.cos(best['alpha']),
+            np.cos(best['beta']) * np.sin(best['alpha']),
+            np.sin(best['beta'])
+        ])
+        distance = np.linalg.norm(P2_2 - Pi)
+
+        print(f"move_l1: P1={P1}, P2={P2_2}, Pi={Pi}, L={best['L']}, Lv={Lv}, distance to target: {distance}")
+
+        target = np.append(Lv, theta)
+        
+        if distance > r:
+            self.set_tcp_position(target, speed_factor=speed_factor)
+            self.move_l1(P2, P1, r=r, speed_factor=speed_factor)
+            time.sleep(0.1)  # Kurze Pause, um die Bewegung zu ermöglichen
+        print(f"Reached target position: {target}")
+
+
         
         
     def move_j(self, target_position, speed_factor=1.0):
@@ -348,7 +414,6 @@ class Robot:
                 self.set_tcp_position(target_position, speed_factor=speed_factor)
                 print(f"Moving towards target position: {target_position}, current position: {current_position}")
                 self.move() # Continue moving towards the target position
-
 
     def move_gripper(self, distance=0, tolerance=5):
         current_distance = self.motor_5.get_position()
