@@ -50,18 +50,18 @@ program:
 
   # Würfelablage 1
   - type: moveJ
-    pos: [-32.54, 185.41, 130, 180]
+    pos: [-32.54, 183, 130, 180]
     speed: 1
 
   - type: moveJ
-    pos: [-32.54, 185.41, 15.96, 180]
+    pos: [-32.54, 183, 15.96, 180]
     speed: 1
 
   - type: gripper
     pos: open
 
   - type: moveJ
-    pos: [-32.54, 185.41, 130, 180]
+    pos: [-32.54, 183, 130, 180]
     speed: 1
 
 
@@ -118,18 +118,18 @@ program:
 
   # Würfelablage 2
   - type: moveJ
-    pos: [-32.54, 149.54, 130, 180]
+    pos: [-32.54, 143, 130, 180]
     speed: 1
 
   - type: moveJ
-    pos: [-32.54, 149.54, 15.96, 180]
+    pos: [-32.54, 143, 15.96, 180]
     speed: 1
 
   - type: gripper
     pos: open
 
   - type: moveJ
-    pos: [-32.54, 185.41, 130, 180]
+    pos: [-32.54, 143, 130, 180]
     speed: 1
 
 
@@ -180,11 +180,11 @@ program:
 
   # Rutsche Ablage 2
   - type: moveJ
-    pos: [124, 193, 130, 180]
+    pos: [124, 187, 130, 180]
     speed: 1
 
   - type: moveJ
-    pos: [124, 193, 95, 180]
+    pos: [124, 187, 95, 180]
     speed: 1
 
   - type: gripper
@@ -208,22 +208,22 @@ program:
 
   # Würfelablage 3
   - type: moveJ
-    pos: [-32.54, 113.67, 130, 180]
+    pos: [-32.54, 103, 130, 180]
     speed: 1
   
   - type: moveJ
-    pos: [-32.54, 113.67, 15.96, 180]
+    pos: [-32.54, 103, 15.96, 180]
     speed: 1
 
   - type: gripper
     pos: open
 
   - type: moveJ
-    pos: [-32.54, 185.41, 130, 180]
+    pos: [-32.54, 103, 130, 180]
     speed: 1
   
 
   # END
   - type: moveJ
-    pos: [150, 0, 100, 0]
+    pos: [150, -150, 100, 0]
     speed: 1

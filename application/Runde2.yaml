@@ -3,41 +3,41 @@ program:
 
   # Zylinder Aufnahme 4
   - type: moveJ
-    pos: [140, -10, 100, 0]
+    pos: [140, 0, 100, 0]
     speed: 1
 
   - type: gripper
     pos: open
 
   - type: moveJ
-    pos: [140, -10, 34, 0]
+    pos: [140, 0, 34, 0]
     speed: 1
 
   - type: gripper
     pos: closed
 
   - type: moveJ
-    pos: [140, -10, 100, 0]
+    pos: [140, 0, 100, 0]
     speed: 1
 
 
   # Zylinder Ablage 1
   - type: moveJ
-    pos: [25, 140, 115.5, 90]
+    pos: [15, 140, 115.5, 90]
     speed: 1
 
   - type: moveL
-    pos: [25, 191, 115.5, 90]
+    pos: [15, 191, 115.5, 90]
     speed: 0.5
 
   - type: gripper
     pos: open
   
   - type: moveL
-    pos: [25, 191, 130, 90]
+    pos: [15, 191, 130, 90]
     speed: 1
 
 #ENDE
   - type: moveJ
-    pos: [150, 0, 100, 0]
+    pos: [150, -150, 100, 0]
     speed: 1
