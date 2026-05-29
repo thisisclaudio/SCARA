@@ -409,6 +409,7 @@ class Robot:
                 if not self.path:
                     print("No more targets in path")
                 else:
+                    time.sleep(0.1)  
                     self.move()
             else:
                 self.set_tcp_position(target_position, speed_factor=speed_factor)
@@ -421,7 +422,9 @@ class Robot:
         if abs(current_distance - distance) < tolerance:
             return True
         else:
+            time.sleep(0.1)
             self.move_gripper(distance)
+
 
 
     def set_gripper(self, distance=0):

@@ -61,5 +61,5 @@ def run(program_file: str):
 
 if __name__ == "__main__":
     program = sys.argv[1] if len(sys.argv) > 1 else \
-        str(Path(__file__).parent / "drawCircle.yaml")
+        str(Path(__file__).parent / "Runde1.yaml")
     run(program)
