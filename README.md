@@ -1,9 +1,11 @@
 # SCARA Robot
 
 Python control software for a SCARA robot arm. Programs are written in YAML and executed via a GUI or the command line.
-
+ 
+[![Demo Video](https://img.youtube.com/vi/xY___xNvjGQ/maxresdefault.jpg)](https://youtu.be/xY___xNvjGQ)
+ 
 ---
-
+ 
 ## Setup
 
 ```bash
