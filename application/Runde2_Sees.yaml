@@ -26,14 +26,14 @@ program:
     pos: [18, 143, 117, 90]
     speed: 1
 
-  - type: moveL
+  - type: moveL1
     pos: [18, 193, 117, 90]
     speed: 0.5
 
   - type: gripper
     pos: open
   
-  - type: moveL
+  - type: moveJ
     pos: [18, 193, 130, 90]
     speed: 1
 

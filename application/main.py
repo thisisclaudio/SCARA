@@ -31,7 +31,7 @@ def run(program_file: str):
                 case "moveL1":
                     pos = np.array(step.pos, dtype=float)
                     print(f"Moving to {pos} with moveL1")
-                    #pos[3] = pos[3] / 180 * np.pi  # Convert degrees to radians
+                    pos[3] = pos[3] / 180 * np.pi  # Convert degrees to radians
                     robot.move_l1(P2=pos[:4])
                 case "gripper":
                     print(f"Setting gripper position to {step.pos}")
@@ -61,5 +61,5 @@ def run(program_file: str):
 
 if __name__ == "__main__":
     program = sys.argv[1] if len(sys.argv) > 1 else \
-        str(Path(__file__).parent / "Runde1.yaml")
+        str(Path(__file__).parent / "drawCircle.yaml")
     run(program)

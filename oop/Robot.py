@@ -275,37 +275,28 @@ class Robot:
 
     
     def move_l(self, target_position, start_position=None, step_size=2, speed_factor=1.0):
-        #for index, pos in enumerate(target_position):
-        #    if not self.check_workspace(index, pos, elbow_right=True):
-        #        return False
-
         if not start_position:
             if not self.path:
                 start_position = self.get_tcp_position()
             else:
-                start_position = self.path[-1]
-                start_position = start_position[:-1]  # remove speed factor from start position
+                start_position = self.path[-1][:-1]  # ohne speed_factor
 
+        start_position = np.array(start_position)
+        target_position = np.array(target_position)
 
-       #print(f"Starting linear move from {start_position} to {target_position} with step size {step_size} and speed factor {speed_factor}")
-        distance = np.linalg.norm(np.array(target_position) - np.array(start_position))
+        # Distanz nur über xyz berechnen
+        distance = np.linalg.norm(target_position[:3] - start_position[:3])
+
         if distance < step_size:
-                target = [target_position, speed_factor]
-                self.path.append(target)
-                return True
+            self.path.append(np.append(target_position, speed_factor))
         else:
             step_count = distance / step_size
-            direction = (np.array(target_position) - np.array(start_position)) / step_count
-           #print(f"Calculated {step_count} steps for linear move, direction: {direction}")
             for i in range(1, int(np.floor(step_count)) + 1):
-                intermediate_position = start_position + direction * i
-               #print(f"i: {i}, intermediate_position: {intermediate_position} Start: {start_position}, Target: {target_position}")
-                target = np.append(intermediate_position, speed_factor)
-                #if not self.check_workspace(intermediate_position, elbow_right=True):
-                #    return False
-                self.path.append(target)
-            target = np.append(intermediate_position, speed_factor)
-            self.path.append(target)
+                t = i / step_count
+                # Alle 4 Achsen (x, y, z, theta) interpolieren
+                intermediate_position = start_position + t * (target_position - start_position)
+                self.path.append(np.append(intermediate_position, speed_factor))
+            self.path.append(np.append(target_position, speed_factor))
 
         self.move()
         return True
@@ -313,7 +304,7 @@ class Robot:
 
 
 
-    def move_l1(self, P2, P1=None, r=20, speed_factor=1.0):
+    def move_l12(self, P2, P1=None, r=5, speed_factor=1.0):
         if P1 is None:
             P1 = self.get_tcp_position()[:3]  # Aktuelle Position des TCP (x, y, z)
         
@@ -350,12 +341,14 @@ class Robot:
             })
 
         in_range = [e for e in ergebnisse if 0.0 <= e["t"] <= 1.0] # Filtere Schnittpunkte, die auf der Strecke zwischen P1 und P2 liegen
-        if in_range:
-            best = min(in_range, key=lambda e: e["t"]) # Wähle den Schnittpunkt mit dem kleinsten t-Wert (nächster Schnittpunkt in Fahrtrichtung)
         positiv = [e for e in ergebnisse if e["t"] > 0] # Wenn kein Schnittpunkt in der Strecke liegt, wähle den Schnittpunkt mit positivem t-Wert (in Fahrtrichtung, aber außerhalb der Strecke)
-        if positiv: # Wenn es positive t-Werte gibt, wähle den mit dem kleinsten t-Wert (nächster Schnittpunkt in Fahrtrichtung)
-            best =  min(positiv, key=lambda e: e["t"]) # Wenn es keine positiven t-Werte gibt, wähle den Schnittpunkt mit dem kleinsten absoluten t-Wert (nächster Schnittpunkt, auch wenn er hinter Pi liegt)
-        best = min(ergebnisse, key=lambda e: abs(e["t"])) # Wähle den Schnittpunkt mit dem kleinsten absoluten t-Wert (nächster Schnittpunkt, auch wenn er hinter Pi liegt)
+
+        if in_range:                                    # Wenn es Schnittpunkte in der Strecke gibt, wähle den mit dem kleinsten t-Wert (nächster Schnittpunkt in Fahrtrichtung)
+            best = min(in_range, key=lambda e: e["t"]) # 
+        elif positiv:
+            best = min(positiv, key=lambda e: e["t"]) # Wenn es keine Schnittpunkte in der Strecke gibt, wähle den mit positivem t-Wert (nächster Schnittpunkt in Fahrtrichtung)
+        else:
+            best = min(ergebnisse, key=lambda e: abs(e["t"])) # Wenn es keine positiven t-Werte gibt, wähle den Schnittpunkt mit dem kleinsten absoluten t-Wert (nächster Schnittpunkt, auch wenn er hinter Pi liegt)
 
         Lv = Pi + r * np.array([
             np.cos(best['beta']) * np.cos(best['alpha']),
@@ -374,6 +367,65 @@ class Robot:
             time.sleep(0.1)  # Kurze Pause, um die Bewegung zu ermöglichen
         print(f"Reached target position: {target}")
 
+    def move_l1(self, P2, P1=None, r=3, speed_factor=1.0): #5
+        if P1 is None:
+            P1 = self.get_tcp_position()
+
+        P1 = np.array(P1)
+        P2 = np.array(P2)
+
+        P1_xyz = P1[:3]
+        P2_xyz = P2[:3]
+
+        d_total_4d = P2 - P1
+        total_len_xyz = np.linalg.norm(d_total_4d[:3])
+        d_unit_xyz = d_total_4d[:3] / total_len_xyz
+
+        while True:
+            Pi = self.get_tcp_position()
+            Pi_xyz = Pi[:3]
+            distance = np.linalg.norm(P2_xyz - Pi_xyz)
+
+            if distance <= r:
+                break
+
+            t_current = np.dot(Pi_xyz - P1_xyz, d_unit_xyz) / total_len_xyz
+            t_lookahead = np.clip(t_current + r / total_len_xyz, 0.0, 1.0)
+
+            L = P1_xyz + t_lookahead * d_total_4d[:3]
+            theta_lookahead = P1[3] + t_lookahead * d_total_4d[3]
+            target = np.append(L, theta_lookahead)
+
+            print(f"move_l1: Pi={np.round(Pi_xyz,1)}, L={np.round(L,1)}, theta={theta_lookahead:.3f}, t={t_lookahead:.3f}, dist={distance:.1f}")
+
+            self.set_tcp_position(target, speed_factor=speed_factor)
+            self._wait_for_motion(target)
+
+        self.set_tcp_position(P2, speed_factor=speed_factor)
+        self._wait_for_motion(P2)
+        print(f"move_l1: reached {P2_xyz}")
+    
+    def _wait_for_motion(self, target, tolerance=8.0, timeout=15.0, still_time=0.15):
+        """Wartet bis TCP nah am Ziel UND still ist."""
+        t_start = time.time()
+        t_in_tolerance = None
+        
+        while True:
+            Pi = self.get_tcp_position()
+            dist = np.linalg.norm(np.array(target) - np.array(Pi))
+            
+            if dist < tolerance:
+                if t_in_tolerance is None:
+                    t_in_tolerance = time.time()
+                elif time.time() - t_in_tolerance >= still_time:
+                    return True  # nah genug UND stabil
+            else:
+                t_in_tolerance = None  # Toleranz verlassen → Reset
+                
+            if time.time() - t_start > timeout:
+                print(f"_wait_for_motion: timeout, dist={dist:.1f}")
+                return False
+            time.sleep(0.02)
 
         
         
@@ -399,7 +451,7 @@ class Robot:
             distance = np.linalg.norm(np.array(target_position) - np.array(current_position))
 
             #debug msg
-            #print(f"Current TCP position: {current_position}, Target TCP position: {target_position}, Distance: {distance}")
+            print(f"Current TCP position: {current_position}, Target TCP position: {target_position}, Distance: {distance}")
             theta3_diff = abs(target_position[3] - current_position[3])
 
             if (distance < tolerance and theta3_diff < np.deg2rad(30)):  # If within tolerance, pop the target and move to the next one

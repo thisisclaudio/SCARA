@@ -33,7 +33,7 @@ def run(program_file: str, robot: Robot, log_callback=None):
             case "moveL1":
                     pos = np.array(step.pos, dtype=float)
                     print(f"Moving to {pos} with moveL1")
-                    #pos[3] = pos[3] / 180 * np.pi  # Convert degrees to radians
+                    pos[3] = pos[3] / 180 * np.pi  # Convert degrees to radians
                     robot.move_l1(P2=pos[:4])
             case "gripper":
                 log(f"gripper → {step.pos}")
